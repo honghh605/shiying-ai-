@@ -45,14 +45,14 @@ Release 中提供：
 模型文件体积较大，不放进普通 Git 仓库，首次运行前下载到 `app/models/`。
 
 ```powershell
-git clone https://github.com/honghh605/shiying-ai--.git
+git clone https://github.com/honghh605/shiying-ai-.git
 cd shiying
 
 python -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -r requirements.txt
 
 # 从 GitHub Release 下载模型
-powershell -ExecutionPolicy Bypass -File scripts\setup_models.ps1 -Repo "honghh605/shiying-ai--"
+powershell -ExecutionPolicy Bypass -File scripts\setup_models.ps1 -Repo "honghh605/shiying-ai-"
 
 # 原生窗口
 .\.venv\Scripts\python.exe -m app.desktop

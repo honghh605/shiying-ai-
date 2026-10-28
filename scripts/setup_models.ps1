@@ -1,5 +1,5 @@
 param(
-    [string]$Repo = "honghh605/shiying-ai--",
+    [string]$Repo = "honghh605/shiying-ai-",
     [string]$Tag = "v1.0.0",
     [string]$ZipPath = ""
 )

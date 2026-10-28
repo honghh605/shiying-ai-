@@ -31,7 +31,7 @@ face_recognition_sface_2021dec.onnx
 把 README 和 `scripts/setup_models.ps1` 中的：
 
 ```text
-honghh605/shiying-ai--
+honghh605/shiying-ai-
 ```
 
 替换为实际 GitHub 用户名和仓库名。
