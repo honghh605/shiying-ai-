@@ -1,0 +1,122 @@
+/* 拾影开屏：取景双弧聚拢，拾起的一帧落定，再回到工具栏。 */
+.brand-mark { color: #246b62; filter: none !important; }
+html[data-theme="dark"] .brand-mark { color: #a7ddd0; }
+html[data-style="liquid"] .brand-mark { color: #edf9f5; }
+.js .launch-screen {
+  z-index: 4000;
+  animation: launch-failsafe 1ms 3s forwards;
+  transition: opacity 220ms ease, visibility 220ms;
+}
+.launch-mark { width: 112px; height: 112px; color: #246b62; }
+html[data-theme="dark"] .launch-mark,
+html[data-style="liquid"] .launch-mark { color: #dff5ee; }
+.launch-mark :is(.logo-arc,.logo-pick) { transform-origin: 48px 48px; }
+.launch-mark .logo-arc-a { animation: gather-a 620ms cubic-bezier(.16,1,.3,1) both; }
+.launch-mark .logo-arc-b { animation: gather-b 620ms 55ms cubic-bezier(.16,1,.3,1) both; }
+.launch-mark .logo-pick { animation: pick-frame 650ms 80ms cubic-bezier(.16,1,.3,1) both; }
+.launch-wordmark { letter-spacing: .08em; margin-top: 18px; animation: name-settle 420ms 160ms ease-out both; }
+.launch-caption { animation: name-settle 420ms 240ms ease-out both; }
+.brand-flight { position: fixed; z-index: 4001; pointer-events: none; transform-origin: 0 0; overflow: visible; }
+.brand-flight * { animation: none !important; }
+@keyframes gather-a {
+  from { opacity: .2; transform: translate(-14px,-10px) rotate(-12deg); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes gather-b {
+  from { opacity: .2; transform: translate(14px,10px) rotate(-12deg); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes pick-frame {
+  0% { opacity: 0; transform: translate(5px,-20px) rotate(20deg) scale(.65); }
+  65% { opacity: 1; transform: translate(0,1px) rotate(-3deg) scale(1.04); }
+  100% { opacity: 1; transform: none; }
+}
+@keyframes name-settle {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: none; }
+}
+html.js[data-motion="off"] .launch-screen { display: none; }
+@media (prefers-reduced-motion: reduce) {
+  html.js[data-motion-pref="system"] .launch-screen { display: none; }
+}
+
+/* Interaction motion only. Existing glass colors, blur and refraction stay untouched. */
+:root { --ease-spring: cubic-bezier(.2,.85,.25,1.12); }
+
+/* Windows already owns its frame; the old painted strip covered the wallpaper. */
+html[data-desktop="1"] body::after { content: none; }
+/* Paint the built-in wallpaper all the way to the viewport/scrollbar edge. */
+html[data-style="liquid"]:not([data-custom-wallpaper]) {
+  background: var(--wallpaper-shade), var(--wallpaper);
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  scrollbar-color: rgb(255 255 255 / .3) transparent;
+}
+html[data-style="liquid"]:not([data-custom-wallpaper]) body { background: transparent; }
+html { overflow-x: clip; }
+
+/* Commit layout once, then interpolate only visible cards in animateReviewLayout. */
+.review-page .review-body,
+.review-page .review-filters,
+.review-page .review-detail,
+.activity-inline-review #photo-grid .source-group { transition: none !important; }
+#photo-grid .frame.review-reveal,
+#photo-grid .frame.review-reveal.reveal-visible {
+  opacity: 1;
+  transform: none;
+  transition: background-color 160ms ease, border-color 160ms ease !important;
+  transition-delay: 0ms !important;
+}
+
+html[data-motion="on"] :is(button, .icon-link, .filter-item, .choice, .folder-item, .file-row) > .icon,
+html[data-motion="on"] .filter-label > .icon {
+  transition: transform 300ms var(--ease-spring);
+}
+html[data-motion="on"] :is(button, .icon-link, .choice):hover > .icon { transform: scale(1.09); }
+html[data-motion="on"] .filter-item.active .filter-label > .icon { animation: selection-settle 280ms var(--ease-spring); }
+html[data-motion="on"] :is(.segmented button.active, .choice.active, .style-card.active) { animation: selection-settle 280ms var(--ease-spring); }
+html[data-motion="on"] input:is([type="checkbox"],[type="radio"]):checked { animation: selection-settle 260ms var(--ease-spring); }
+html[data-motion="on"] .source-group-chevron,
+html[data-motion="on"] .overview-chevron { transition: transform 320ms var(--ease-spring); }
+html[data-motion="on"] .toast { animation: toast-in 320ms var(--ease-spring); }
+html[data-motion="on"] .batch-bar { animation: menu-settle 280ms var(--ease-spring); }
+html[data-motion="on"] .overlay { animation: overlay-arrive 200ms ease-out; }
+html[data-motion="on"] .overlay > :is(img,.compare-wrap) { animation: menu-settle 320ms var(--ease-spring); }
+html[data-motion="on"] .photo-inspect .pi-nav { transition-timing-function: var(--ease-spring); }
+/* Animate the assistant's travel without changing its glass composition. */
+html[data-motion="on"] .agent-root .agent-panel { transition: transform 360ms var(--ease-spring), opacity 180ms ease !important; }
+html[data-motion="on"] .agent-root:not(.open) .agent-panel { transition-duration: 220ms !important; transition-timing-function: ease-in !important; }
+html[data-motion="on"] .agent-msg { animation-duration: 260ms; }
+.tap-ripple { animation-duration: 360ms; }
+@keyframes selection-settle { 0% { scale: .96; } 65% { scale: 1.025; } 100% { scale: 1; } }
+@keyframes menu-settle { from { opacity: .4; translate: 0 6px; scale: .985; } to { opacity: 1; translate: 0 0; scale: 1; } }
+@keyframes overlay-arrive { from { opacity: 0; } to { opacity: 1; } }
+
+/* Pointer tracking already updates once per display frame. Do not chase each
+   new tilt with another 160ms transition; keep the existing optical material. */
+html[data-style] button[data-material-tracking="1"] {
+  transition-property: box-shadow, border-color, background-color;
+}
+/* Shared motion never changes theme materials. Temporary layers are released by WAAPI. */
+html[data-motion="on"] [data-reveal].wave-card {
+  opacity: 1; transform: none; transition: none; animation: none;
+}
+.choice-row.has-choice-slider { position: relative; isolation: isolate; }
+.choice-row.has-choice-slider > .choice { position: relative; z-index: 1; }
+html[data-style] .choice-row.has-choice-slider > .choice.active {
+  background: transparent; border-color: transparent; box-shadow: none; animation: none;
+}
+html[data-style] .choice-row.choice-slider-measure > .choice { transition: none !important; animation: none !important; }
+.choice-row.has-choice-slider > .choice { transition-property: color; }
+.choice-slider { position: absolute; z-index: 0; pointer-events: none; transform-origin: center; box-sizing: border-box; }
+.photo-flight { position: fixed; z-index: 3100; pointer-events: none; object-fit: contain; transform-origin: center; }
+.photo-inspect { transform: none; transition: opacity 180ms ease; }
+.photo-inspect.open { transform: none; }
+
+/* Photo drawers keep independent scrolling; the surrounding workbench must
+   never trap wheel input intended for the activity page. */
+.review-embedded :is(.review-grid-col, .review-filters, .review-detail) {
+  overscroll-behavior-y: auto !important;
+}

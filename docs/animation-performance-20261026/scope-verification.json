@@ -1,0 +1,10 @@
+{
+  "changedAppFiles": [
+    "app/web/app.js",
+    "app/web/index.html",
+    "app/web/release-motion.css",
+    "app/web/release-motion.js"
+  ],
+  "unchangedOtherAppFiles": 73,
+  "cssMaterialDeclarationsIdentical": true
+}

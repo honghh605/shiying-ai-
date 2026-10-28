@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1800 1200" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="base" x2=".8" y2="1"><stop stop-color="#edf0f4"/><stop offset="1" stop-color="#cbd2dc"/></linearGradient>
+    <linearGradient id="fold" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#e2e7ee"/><stop offset=".45" stop-color="#f7f9fc"/><stop offset="1" stop-color="#c3ccd8"/></linearGradient>
+    <linearGradient id="edge" x2="0" y2="1"><stop stop-color="#fff" stop-opacity=".85"/><stop offset="1" stop-color="#aebdce" stop-opacity=".2"/></linearGradient>
+  </defs>
+  <path fill="url(#base)" d="M0 0h1800v1200H0z"/>
+  <path fill="url(#fold)" d="M-140 1120C180 350 540 1010 1130 380S1840 120 1950-160V1240H-140z"/>
+  <path d="M-140 1120C180 350 540 1010 1130 380S1840 120 1950-160" fill="none" stroke="url(#edge)" stroke-width="3"/>
+</svg>

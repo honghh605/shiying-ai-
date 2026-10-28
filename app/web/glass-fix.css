@@ -1,0 +1,167 @@
+/* 全局玻璃稳定性：先铺静态磨砂底色，再交给 backdrop-filter 增强。
+   同时把整页切换改为纯位移，避免 WebView2 在 opacity 动画期间推迟合成玻璃。 */
+/* 玻璃底色交给主题变量与用户的透明度设置，不能再用固定深色覆盖卡片。 */
+
+@supports (view-transition-name: none) {
+  html[data-style="liquid"] ::view-transition-new(root) { animation: liquid-page-in 280ms cubic-bezier(.16,1,.3,1) both !important; }
+  html[data-style="liquid"] ::view-transition-old(root) { animation: none !important; opacity: 0 !important; }
+}
+@keyframes liquid-page-in {
+  from { opacity: 1; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* 液态玻璃弹层/右键菜单只做位移，不用透明度拖慢磨砂 */
+html[data-style="liquid"] .modal,
+html[data-style="liquid"] .photo-context-menu,
+html[data-style="liquid"] .batch-bar {
+  animation-duration: 1ms !important;
+}
+html[data-style="liquid"] .photo-context-menu { animation: liquid-pop-in 150ms cubic-bezier(.22,1,.36,1) both !important; }
+@keyframes liquid-pop-in {
+  from { opacity: 1; transform: translateY(-4px) scale(.985); }
+  to { opacity: 1; transform: none; }
+}
+
+
+
+/* 文件/文件夹选择器悬停：沿用液态玻璃，不使用纯白底。 */
+html[data-style="liquid"] .folder-item:hover,
+html[data-style="liquid"] .file-row:hover,
+html[data-style="liquid"] .list-item:hover,
+html[data-style="liquid"] .menu-item:hover {
+  background: color-mix(in srgb, var(--panel-background) 82%, var(--accent-soft)) !important;
+  color: var(--ink) !important;
+}
+html[data-style="liquid"] .folder-item:hover .icon,
+html[data-style="liquid"] .file-row:hover .icon { color: var(--accent) !important; }
+
+
+/* 活动卡片：按钮只保留透明玻璃描边，不要黑色底 */
+.roll .roll-admin { opacity: 1; }
+html[data-style] .roll .roll-admin .roll-admin-btn {
+  background: rgb(255 255 255 / .10) !important;
+  border: 1px solid rgb(255 255 255 / .34) !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 14px rgb(0 8 18 / .12), inset 0 1px 0 rgb(255 255 255 / .14) !important;
+  backdrop-filter: blur(16px) saturate(140%);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+}
+html[data-style] .roll .roll-admin .roll-admin-btn:hover {
+  background: rgb(255 255 255 / .20) !important;
+  border-color: rgb(255 255 255 / .56) !important;
+  color: #ffffff !important;
+}
+html[data-style] .roll .roll-admin .roll-admin-btn.roll-delete {
+  background: rgb(255 255 255 / .10) !important;
+  border-color: rgb(255 255 255 / .34) !important;
+  color: #ffffff !important;
+}
+html[data-style] .roll .roll-admin .roll-admin-btn.roll-delete:hover {
+  background: rgb(255 120 110 / .26) !important;
+  border-color: rgb(255 196 188 / .80) !important;
+  color: #ffffff !important;
+}
+html[data-style] .roll .roll-actions button.small.roll-report,
+html[data-style] .roll .roll-actions button.small.primary {
+  background: rgb(255 255 255 / .10) !important;
+  border: 1px solid rgb(255 255 255 / .32) !important;
+  color: #ffffff !important;
+  box-shadow: 0 3px 12px rgb(4 16 28 / .10), inset 0 1px 0 rgb(255 255 255 / .12) !important;
+  backdrop-filter: blur(14px) saturate(140%);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+}
+html[data-style] .roll .roll-actions button.small.roll-report:hover,
+html[data-style] .roll .roll-actions button.small.primary:hover {
+  background: rgb(255 255 255 / .20) !important;
+  border-color: rgb(255 255 255 / .54) !important;
+  color: #ffffff !important;
+}
+
+
+/* 页面级滚动条：隐藏窗口原生滚动条，改为壁纸内的窄玻璃滚动条。 */
+html { scrollbar-width: none; }
+html::-webkit-scrollbar { width: 0; height: 0; }
+.page-scrollbar {
+  position: fixed;
+  right: 9px;
+  top: calc(var(--header-h, 64px) + 8px);
+  bottom: 9px;
+  width: 7px;
+  z-index: 32;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 180ms ease;
+}
+.page-scrollbar.show { opacity: 1; }
+.page-scrollbar-track {
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  background: rgb(255 255 255 / .055);
+  pointer-events: auto;
+}
+.page-scrollbar-thumb {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 7px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ink) 30%, transparent);
+  border: 1px solid rgb(255 255 255 / .16);
+  box-shadow: 0 1px 5px rgb(0 8 18 / .22), inset 0 1px 0 rgb(255 255 255 / .18);
+  pointer-events: auto;
+  cursor: grab;
+  will-change: transform;
+}
+.page-scrollbar-thumb:active { cursor: grabbing; background: color-mix(in srgb, var(--ink) 44%, transparent); }
+html[data-theme="light"] .page-scrollbar-track { background: rgb(0 20 30 / .05); }
+html[data-theme="light"] .page-scrollbar-thumb { background: color-mix(in srgb, var(--ink) 26%, transparent); }
+
+
+/* 开屏动画背景跟随明暗主题：浅色纯白，深色保持当前画布色。 */
+.js .launch-screen { background: #fff !important; }
+html.js[data-theme="dark"] .launch-screen { background: var(--canvas) !important; }
+html[data-theme="light"] .launch-screen .launch-mark { color: #246b62 !important; }
+html[data-theme="dark"] .launch-screen .launch-mark { color: #dff5ee !important; }
+
+
+/* 首次配置 API Key 弹窗：只做位移动效，磨砂底同帧出现。 */
+.first-run-modal {
+  transform-origin: 50% 45%;
+  animation: first-run-pop 760ms linear both;
+  will-change: transform;
+}
+.first-run-mask {
+  animation: first-run-mask-in 320ms ease-out both;
+}
+@keyframes first-run-pop {
+  0% { transform: translateY(70px) scale(.70) rotate(-1.2deg); }
+  28% { transform: translateY(-16px) scale(1.095) rotate(.8deg); }
+  44% { transform: translateY(9px) scale(.94) rotate(-.45deg); }
+  60% { transform: translateY(-7px) scale(1.04) rotate(.25deg); }
+  73% { transform: translateY(4px) scale(.978) rotate(-.12deg); }
+  84% { transform: translateY(-2px) scale(1.018) rotate(.05deg); }
+  93% { transform: translateY(1px) scale(.996); }
+  100% { transform: translateY(0) scale(1) rotate(0); }
+}
+@keyframes first-run-mask-in {
+  0% { background-color: rgb(10 20 14 / 0); }
+  100% { background-color: rgb(10 20 14 / .36); }
+}
+
+
+
+/* 首次配置弹窗需要自己的入场时长，不能被全局弹窗 1ms 规则压掉。 */
+html[data-style="liquid"] .modal.first-run-modal,
+html[data-motion="off"] .modal.first-run-modal {
+  animation-duration: 760ms !important;
+}
+
+/* 密度/主题等分段选择：悬停不再铺深色底，只保留文字反馈和滑动选中块。 */
+html[data-style] .choice:hover,
+html[data-style] .choice-row.has-choice-slider > .choice:hover {
+  background: transparent !important;
+  box-shadow: none !important;
+  color: var(--ink) !important;
+}

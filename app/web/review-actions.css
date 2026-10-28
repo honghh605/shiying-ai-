@@ -1,0 +1,227 @@
+/* 活动概览头：报告 / 导出直接复用 overview-toggle 的玻璃材质和动效。 */
+.overview-actions { display: flex; align-items: center; gap: 7px; flex: none; }
+.overview-export .icon { transform: none !important; }
+/* 复核：批量操作、右键菜单、快捷键设置、冲突提示 */
+.photo-context-menu {
+  position: fixed; z-index: 900; min-width: 214px; padding: 6px;
+  border: 1px solid var(--panel-stroke); border-radius: 13px;
+  background: var(--floating-background); color: var(--ink);
+  box-shadow: var(--floating-shadow);
+  backdrop-filter: var(--panel-backdrop); -webkit-backdrop-filter: var(--panel-backdrop);
+  animation: context-menu-in 150ms cubic-bezier(.22, 1, .36, 1) both;
+}
+@keyframes context-menu-in { from { opacity: 0; transform: translateY(-4px) scale(.985); } to { opacity: 1; transform: none; } }
+.photo-context-menu .cm-title { padding: 7px 9px 6px; color: var(--muted); font-size: 10px; letter-spacing: .12em; border-bottom: 1px solid var(--line); margin-bottom: 4px; max-width: 230px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.photo-context-menu button {
+  width: 100%; height: auto; min-height: 30px; display: flex; align-items: center; gap: 8px;
+  padding: 6px 9px; border: 0 !important; border-radius: 8px; background: transparent !important;
+  color: var(--ink-2) !important; box-shadow: none !important; text-align: left; font-size: 12px; backdrop-filter: none !important;
+}
+.photo-context-menu button:hover { background: color-mix(in srgb, var(--accent-soft) 55%, var(--surface-2)) !important; color: var(--ink) !important; }
+.photo-context-menu button.danger { color: var(--red) !important; }
+.photo-context-menu button.danger:hover { background: color-mix(in srgb, var(--red-soft) 70%, transparent) !important; }
+.photo-context-menu .cm-icon { width: 16px; height: 16px; display: grid; place-items: center; color: var(--muted); }
+.photo-context-menu .cm-icon .icon { width: 15px; height: 15px; }
+.photo-context-menu .cm-divider { height: 1px; margin: 5px 4px; background: var(--line); }
+.photo-context-menu kbd { margin-left: auto; }
+
+.review-danger-button { color: var(--red) !important; }
+.review-danger-button:hover { border-color: color-mix(in srgb, var(--red) 45%, var(--line)) !important; }
+
+.shortcut-list { display: flex; flex-direction: column; gap: 8px; }
+.shortcut-row { display: grid; grid-template-columns: minmax(140px, 220px) minmax(140px, 220px) 1fr; gap: 12px; align-items: center; }
+.shortcut-row > span:first-child { color: var(--ink-2); font-size: 13px; }
+.shortcut-input {
+  width: 100%; height: 34px; padding: 0 11px; border-radius: 9px;
+  border: 1px solid var(--line-strong); background: color-mix(in srgb, var(--panel-background) 55%, transparent);
+  color: var(--ink); font-size: 12px; font-variant-numeric: tabular-nums;
+}
+.shortcut-input.conflict { border-color: var(--red) !important; box-shadow: 0 0 0 2px color-mix(in srgb, var(--red) 18%, transparent) !important; }
+.shortcut-row .hint { font-size: 11px; }
+.shortcut-alert {
+  position: fixed !important; right: 86px !important; top: 18px !important; left: auto !important; bottom: auto !important; z-index: 80 !important;
+  width: 10px; height: 10px; border-radius: 50%; background: var(--red);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--red) 18%, transparent);
+  border: 0; padding: 0; cursor: pointer;
+  animation: shortcut-alert-pulse 1.8s ease-in-out infinite;
+}
+@keyframes shortcut-alert-pulse { 50% { box-shadow: 0 0 0 7px color-mix(in srgb, var(--red) 8%, transparent); } }
+.modal .delete-mode-list { display: grid; gap: 10px; margin-top: 12px; }
+.delete-mode-option {
+  display: grid !important;
+  grid-template-columns: 36px minmax(0, 1fr) !important;
+  align-items: center !important;
+  justify-content: stretch !important;
+  gap: 12px !important;
+  width: 100% !important;
+  height: auto !important;
+  min-height: 64px !important;
+  padding: 12px 14px !important;
+  border: 1px solid var(--line); border-radius: 12px; background: var(--panel-background);
+  color: var(--ink); text-align: left !important;
+  box-shadow: none !important;
+}
+.delete-mode-option:hover { border-color: var(--accent); }
+.delete-mode-option.danger:hover { border-color: var(--red); }
+.delete-mode-option > span:last-child { display: flex; flex-direction: column; justify-content: center; gap: 3px; min-width: 0; }
+.delete-mode-option b { display: block; font-size: 13px; line-height: 1.35; margin: 0 !important; }
+.delete-mode-option small { display: block; color: var(--muted); font-size: 11px; line-height: 1.55; margin: 0 !important; }
+.delete-mode-icon {
+  width: 36px !important; height: 36px !important; flex: none;
+  display: grid !important; place-items: center; align-self: center !important;
+  border-radius: 10px; background: var(--surface-2); color: var(--muted);
+}
+.delete-mode-icon .icon { width: 17px !important; height: 17px !important; }
+.delete-mode-option.danger .delete-mode-icon { color: var(--red); background: var(--red-soft); }
+
+@media (max-width: 760px) {
+  .shortcut-row { grid-template-columns: 1fr; gap: 4px; }
+}
+
+
+
+/* AI 粗筛抽屉：右侧折叠按钮改成明确的玻璃胶囊按钮 */
+.activity-overview-head { cursor: pointer; }
+.overview-toggle {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+  width: auto !important;
+  min-width: 0 !important;
+  height: 30px !important;
+  min-height: 30px !important;
+  padding: 0 11px !important;
+  border: 1px solid var(--line-strong) !important;
+  border-radius: 999px !important;
+  background: var(--panel-background) !important;
+  color: var(--ink-2) !important;
+  box-shadow: var(--panel-shadow) !important;
+  transform: none !important;
+  transition: background 160ms ease, border-color 160ms ease, box-shadow 160ms ease !important;
+}
+.overview-toggle .overview-toggle-label {
+  font-size: 11px !important;
+  line-height: 1 !important;
+  letter-spacing: .04em !important;
+  font-weight: 600 !important;
+  white-space: nowrap;
+}
+.overview-toggle .icon {
+  width: 13px !important;
+  height: 13px !important;
+  transition: transform 240ms cubic-bezier(.22,1,.36,1) !important;
+}
+.overview-toggle:hover {
+  border-color: var(--accent) !important;
+  background: color-mix(in srgb, var(--accent-soft) 55%, var(--panel-background)) !important;
+  color: var(--ink) !important;
+  box-shadow: var(--floating-shadow) !important;
+  transform: none !important;
+}
+.activity-overview-drawer.collapsed .overview-toggle { transform: none !important; }
+.activity-overview-drawer.collapsed .overview-toggle .icon { transform: rotate(-90deg); }
+html[data-style="liquid"] .overview-toggle {
+  background: color-mix(in srgb, var(--panel-background) 88%, transparent) !important;
+  border-color: var(--panel-stroke) !important;
+  color: var(--ink-2) !important;
+  -webkit-backdrop-filter: var(--panel-backdrop) !important;
+  backdrop-filter: var(--panel-backdrop) !important;
+}
+html[data-style="liquid"] .overview-toggle:hover {
+  background: color-mix(in srgb, var(--panel-background) 72%, var(--accent-soft)) !important;
+  border-color: var(--accent) !important;
+  color: var(--ink) !important;
+}
+
+/* 删除方式两个选项都必须保留完整玻璃按钮外观；.danger 不能被全局规则剥掉底色。 */
+.modal .delete-mode-option,
+.modal .delete-mode-option.danger {
+  background: color-mix(in srgb, var(--panel-background) 92%, transparent) !important;
+  border: 1px solid color-mix(in srgb, var(--line-strong) 78%, transparent) !important;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / .10), 0 1px 2px rgb(0 0 0 / .10) !important;
+  color: var(--ink) !important;
+}
+.modal .delete-mode-option.danger {
+  border-color: color-mix(in srgb, var(--red) 38%, var(--line-strong)) !important;
+}
+.modal .delete-mode-option:hover {
+  background: color-mix(in srgb, var(--panel-background) 82%, var(--accent-soft)) !important;
+  border-color: var(--accent) !important;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / .12), 0 4px 12px rgb(0 0 0 / .12) !important;
+}
+.modal .delete-mode-option.danger:hover {
+  background: color-mix(in srgb, var(--red-soft) 46%, var(--panel-background)) !important;
+  border-color: var(--red) !important;
+}
+.modal .delete-mode-option .delete-mode-icon {
+  background: color-mix(in srgb, var(--surface-2) 88%, transparent) !important;
+}
+.modal .delete-mode-option.danger .delete-mode-icon {
+  background: color-mix(in srgb, var(--red-soft) 86%, transparent) !important;
+}
+
+/* 删除方式两个选项使用完全相同的液态玻璃材质和动效；
+   危险项只改变边框/图标颜色，不改变材质、阴影和位移动画。 */
+html[data-style] .modal .delete-mode-option,
+html[data-style="liquid"] .modal .delete-mode-option,
+html[data-style] .modal .delete-mode-option.danger,
+html[data-style="liquid"] .modal .delete-mode-option.danger {
+  background:
+    url('/static/materials/glass-noise.svg') padding-box,
+    linear-gradient(135deg, rgb(255 255 255 / .10), transparent 42%, rgb(255 255 255 / .03)) padding-box,
+    var(--panel-background) padding-box !important;
+  background-size: 160px 160px, 100% 100%, 100% 100% !important;
+  background-blend-mode: overlay, normal, normal !important;
+  border: 1px solid var(--panel-stroke) !important;
+  box-shadow: var(--panel-shadow) !important;
+  transform: none !important;
+  transition: transform 180ms cubic-bezier(.22,1,.36,1), border-color 160ms ease, box-shadow 180ms ease !important;
+  -webkit-backdrop-filter: var(--panel-backdrop) !important;
+  backdrop-filter: var(--panel-backdrop) !important;
+}
+html[data-style] .modal .delete-mode-option::after,
+html[data-style] .modal .delete-mode-option::before { display: none !important; content: none !important; }
+html[data-style] .modal .delete-mode-option:hover,
+html[data-style="liquid"] .modal .delete-mode-option:hover {
+  transform: translateY(-1px) !important;
+  border-color: var(--accent) !important;
+  box-shadow: var(--floating-shadow) !important;
+  background-color: transparent !important;
+}
+html[data-style] .modal .delete-mode-option:active,
+html[data-style="liquid"] .modal .delete-mode-option:active {
+  transform: translateY(0) scale(.996) !important;
+  box-shadow: var(--panel-shadow) !important;
+}
+html[data-style] .modal .delete-mode-option.danger {
+  border-color: color-mix(in srgb, var(--red) 34%, var(--panel-stroke)) !important;
+}
+html[data-style] .modal .delete-mode-option.danger:hover {
+  border-color: var(--red) !important;
+}
+html[data-style] .modal .delete-mode-option.danger .delete-mode-icon {
+  color: var(--red) !important;
+  background: color-mix(in srgb, var(--red-soft) 54%, var(--panel-background)) !important;
+}
+html[data-style] .modal .delete-mode-option:not(.danger) .delete-mode-icon {
+  color: var(--ink-2) !important;
+  background: color-mix(in srgb, var(--surface-2) 54%, var(--panel-background)) !important;
+}
+
+/* 用长属性分别铺设底色和纹理，避免被全局 button 背景速写覆盖。 */
+html[data-style] .modal .delete-mode-option,
+html[data-style="liquid"] .modal .delete-mode-option,
+html[data-style] .modal .delete-mode-option.danger,
+html[data-style="liquid"] .modal .delete-mode-option.danger {
+  background-color: color-mix(in srgb, var(--canvas) 66%, transparent) !important;
+  background-image:
+    url('/static/materials/glass-noise.svg'),
+    linear-gradient(135deg, rgb(255 255 255 / .10), transparent 44%, rgb(255 255 255 / .03)) !important;
+  background-size: 160px 160px, 100% 100% !important;
+  background-position: 0 0, 0 0 !important;
+  background-repeat: repeat, no-repeat !important;
+  background-blend-mode: overlay, normal !important;
+}
+
+

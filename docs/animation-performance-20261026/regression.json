@@ -1,0 +1,21 @@
+{
+  "checks": {
+    "rapid-slider-settles": true,
+    "settings-jump-AI 接口": true,
+    "settings-jump-关于": true,
+    "settings-jump-外观": true,
+    "navigation-no-blocking-veil": true,
+    "modal-opens": true,
+    "modal-exit-cleans-up": true,
+    "drawer-count": 1,
+    "menu-has-no-finished-animation": true,
+    "menu-closes": true,
+    "photo-pan-no-transition-lag": true,
+    "photo-pan-releases": true,
+    "photo-flight-cleans-up": true,
+    "motion-off-respected": true,
+    "system-reduced-motion-respected": true,
+    "no-page-errors": true
+  },
+  "errors": []
+}

@@ -1,0 +1,81 @@
+/* 导入选片：玻璃材质、列表/网格、四档缩略图与右侧预览 */
+.modal.picker-wide {
+  width: min(1180px, calc(100vw - 40px)) !important;
+  max-width: 1180px !important;
+  height: min(820px, calc(100vh - 60px));
+  max-height: calc(100vh - 60px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.modal.picker-wide .m-body { flex: 1; min-height: 0; display: flex; flex-direction: column; padding: 0; overflow: hidden; }
+.picker-shell { display: flex; flex-direction: column; min-height: 0; flex: 1; }
+.picker-toolbar {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  padding: 12px 16px; border-bottom: 1px solid var(--line);
+  background: color-mix(in srgb, var(--panel-background) 72%, transparent);
+}
+.picker-path { flex: 1; min-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.picker-toolbar .row { gap: 6px; }
+.picker-size-group, .picker-view-group { display: flex; align-items: center; gap: 3px; padding: 3px; border: 1px solid var(--line); border-radius: 10px; background: color-mix(in srgb, var(--surface-2) 50%, transparent); }
+.picker-size-group button, .picker-view-group button {
+  min-width: 30px; height: 28px; padding: 0 8px; border: 0; border-radius: 7px;
+  background: transparent; color: var(--muted); font-size: 11px; box-shadow: none !important;
+}
+.picker-size-group button.active, .picker-view-group button.active { background: var(--panel-background); color: var(--ink); box-shadow: var(--panel-shadow) !important; }
+.picker-body { display: grid; grid-template-columns: minmax(0, 1fr) 300px; flex: 1; min-height: 0; }
+.picker-browser { overflow: auto; padding: 12px 14px 18px; min-height: 0; scrollbar-gutter: stable; }
+.picker-preview { border-left: 1px solid var(--line); padding: 14px; display: flex; flex-direction: column; gap: 10px; min-height: 0; background: color-mix(in srgb, var(--canvas) 18%, transparent); }
+.picker-preview-stage { flex: 1; min-height: 180px; border-radius: 14px; overflow: hidden; border: 1px solid var(--panel-stroke); background: color-mix(in srgb, var(--canvas) 65%, transparent); display: grid; place-items: center; }
+.picker-preview-stage img { max-width: 100%; max-height: 100%; object-fit: contain; display: block; }
+.picker-preview-empty { color: var(--muted); font-size: 12px; text-align: center; padding: 20px; }
+.picker-preview-meta { flex: none; font-size: 11px; color: var(--muted); line-height: 1.6; overflow: hidden; }
+.picker-preview-meta b { display: block; color: var(--ink); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.picker-dirs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.picker-dir {
+  display: inline-flex; align-items: center; gap: 6px; padding: 7px 10px; border-radius: 9px;
+  border: 1px solid var(--line); background: color-mix(in srgb, var(--surface-2) 56%, transparent);
+  color: var(--ink-2); font-size: 12px; cursor: pointer;
+}
+.picker-dir:hover { border-color: var(--accent); color: var(--ink); }
+.picker-grid { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(var(--picker-thumb, 120px), 1fr)); }
+.picker-item {
+  position: relative; display: flex; flex-direction: column; gap: 5px; min-width: 0; padding: 5px;
+  border: 1px solid transparent; border-radius: 11px; background: transparent; color: var(--ink-2); cursor: pointer;
+}
+.picker-item:hover { border-color: var(--line-strong); background: color-mix(in srgb, var(--panel-background) 58%, transparent); }
+.picker-item.selected { border-color: var(--accent); background: color-mix(in srgb, var(--accent-soft) 60%, var(--panel-background)); box-shadow: 0 0 0 1px var(--accent); }
+.picker-thumb { position: relative; aspect-ratio: 4 / 3; border-radius: 8px; overflow: hidden; background: color-mix(in srgb, var(--canvas) 62%, #fff 6%); }
+.picker-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.picker-item .picker-name { font-size: 10.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 0 2px; }
+.picker-badge { position: absolute; top: 5px; left: 5px; min-width: 18px; height: 18px; border-radius: 6px; display: grid; place-items: center; font-size: 10px; color: #08201b; background: var(--accent); opacity: 0; }
+.picker-item.selected .picker-badge { opacity: 1; }
+.picker-list { display: flex; flex-direction: column; gap: 2px; }
+.picker-list .picker-item { flex-direction: row; align-items: center; padding: 5px 8px; border-radius: 8px; }
+.picker-list .picker-thumb { width: 56px; height: 42px; aspect-ratio: auto; flex: none; border-radius: 6px; }
+.picker-list .picker-name { font-size: 12px; flex: 1; }
+.picker-list .picker-item .picker-size { color: var(--faint); font-size: 10px; font-variant-numeric: tabular-nums; }
+.picker-list .picker-item .picker-badge { position: static; opacity: 1; order: 3; min-width: 16px; height: 16px; background: transparent; color: var(--accent); }
+.picker-empty { padding: 38px 16px; text-align: center; color: var(--muted); font-size: 12px; }
+.picker-footer-count { color: var(--muted); font-size: 12px; margin-right: auto; }
+@media (max-width: 860px) {
+  .picker-body { grid-template-columns: minmax(0, 1fr); }
+  .picker-preview { display: none; }
+}
+html[data-style="liquid"] .modal.picker-wide { background: var(--panel-background); -webkit-backdrop-filter: var(--panel-backdrop); backdrop-filter: var(--panel-backdrop); }
+
+/* 按钮基线会设置固定高度；缩略图卡片必须恢复自适应高度，避免图片被压扁。 */
+.picker-item {
+  height: auto !important;
+  min-height: 0 !important;
+  padding: 5px !important;
+  overflow: visible !important;
+  display: flex !important;
+  align-items: stretch !important;
+  justify-content: flex-start !important;
+}
+.picker-item .picker-thumb { flex: none; width: 100%; height: auto; }
+.picker-list .picker-item .picker-thumb { width: 56px; height: 42px; flex: 0 0 56px; }
+.picker-dir { height: auto !important; min-height: 0 !important; padding: 7px 10px !important; }
+.picker-toolbar button { height: 28px !important; min-height: 0 !important; }
+.picker-size-group button, .picker-view-group button { height: 28px !important; min-height: 0 !important; }

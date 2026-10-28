@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#f3f4f2">
+<title>拾影 · 活动选片</title>
+<link rel="icon" type="image/svg+xml" href="/static/logo.svg?v=20261021-motion1">
+<link rel="alternate icon" href="/static/icon.ico?v=20261021-motion1">
+<link rel="preload" href="/static/materials/wallpapers-20261021/liquid-ocean-waves.webp?v=20261021-waves2" as="image">
+<link rel="preload" href="/static/materials/wallpapers-20261021/minimal-mist.webp?v=20261021-blue2" as="image">
+<link rel="preload" href="/static/materials/glass-noise.svg" as="image">
+<link rel="preload" href="/static/fonts/dm-sans-variable.ttf" as="font" type="font/ttf" crossorigin>
+<script>
+try {
+  document.documentElement.dataset.theme = localStorage.getItem('cull-theme') === 'dark' ? 'dark' : 'light';
+  const savedStyle = localStorage.getItem('cull-style');
+  document.documentElement.dataset.style = ['standard','liquid'].includes(savedStyle) ? savedStyle : 'liquid';
+  document.documentElement.dataset.density = localStorage.getItem('cull-density') || 'comfortable';
+  const motionMode = localStorage.getItem('cull-motion') || 'system';
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  document.documentElement.dataset.motion = (motionMode === 'on' || (motionMode === 'system' && !reduced)) ? 'on' : 'off';
+  document.documentElement.dataset.motionPref = motionMode;
+} catch (_) {}
+document.documentElement.classList.add('js');
+</script>
+<link rel="stylesheet" href="/static/style.css?v=20261026-final5">
+<link rel="stylesheet" href="/static/themes.css?v=20261026-final5">
+<link rel="stylesheet" href="/static/wallpapers.css?v=20261026-final5">
+<link rel="stylesheet" href="/static/ui-polish.css?v=20261026-final5">
+<link rel="stylesheet" href="/static/agent.css?v=20261026-final5">
+<link rel="stylesheet" href="/static/motion.css?v=20261026-final5">
+<link rel="stylesheet" href="/static/picker.css?v=20261026-final5">
+<link rel="stylesheet" href="/static/review-actions.css?v=20261026-final5">
+<link rel="stylesheet" href="/static/glass-fix.css?v=20261026-final5">
+<link rel="stylesheet" href="/static/release-motion.css?v=20261026-performance1">
+</head>
+<body>
+<div id="wallpaper-layer" aria-hidden="true"><video id="wallpaper-video" muted loop playsinline preload="auto"></video><iframe id="wallpaper-scene" title="动态壁纸" allow="autoplay" loading="lazy"></iframe></div>
+<div id="launch-screen" class="launch-screen" aria-hidden="true">
+  <div class="launch-identity">
+    <svg class="launch-mark" viewBox="0 0 96 96" aria-hidden="true">
+  <path class="logo-arc logo-arc-a" fill="currentColor" d="M66 14H42C26.54 14 14 26.54 14 42v14h16V42c0-6.63 5.37-12 12-12h24a8 8 0 0 0 0-16Z"/>
+  <path class="logo-arc logo-arc-b" fill="currentColor" d="M30 82h24c15.46 0 28-12.54 28-28V40H66v14c0 6.63-5.37 12-12 12H30a8 8 0 0 0 0 16Z"/>
+  <g class="logo-pick"><rect x="37" y="37" width="22" height="22" rx="5.5" transform="rotate(-12 48 48)" fill="#57b6a5"/></g>
+    </svg>
+    <span class="launch-wordmark">拾影</span>
+    <span class="launch-caption">留住值得的每一帧</span>
+  </div>
+</div>
+<header class="topbar">
+  <div class="window-drag-strip" id="window-drag" aria-hidden="true"></div>
+  <div class="topbar-lead" id="topbar-lead">
+    <a class="brand" href="#/activities" aria-label="拾影，返回活动">
+      <svg class="brand-mark" viewBox="0 0 96 96" width="36" height="36" aria-hidden="true">
+  <path class="logo-arc logo-arc-a" fill="currentColor" d="M66 14H42C26.54 14 14 26.54 14 42v14h16V42c0-6.63 5.37-12 12-12h24a8 8 0 0 0 0-16Z"/>
+  <path class="logo-arc logo-arc-b" fill="currentColor" d="M30 82h24c15.46 0 28-12.54 28-28V40H66v14c0 6.63-5.37 12-12 12H30a8 8 0 0 0 0 16Z"/>
+  <g class="logo-pick"><rect x="37" y="37" width="22" height="22" rx="5.5" transform="rotate(-12 48 48)" fill="#57b6a5"/></g>
+</svg>
+      <span class="brand-name">拾影</span>
+    </a>
+    <button class="nav-trigger" id="nav-trigger" type="button" aria-expanded="false" aria-controls="topnav" aria-label="展开导航" title="展开导航">
+      <svg class="icon icon-chevronRight" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
+    </button>
+    <nav class="topnav" id="topnav" aria-label="主导航">
+      <a href="#/activities" data-nav="activities"><svg class="icon icon-image" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="15" rx="2"/><path d="m3 16 5-5 5 5 3-3 5 5M7 2h10"/></svg><span class="nav-label">活动</span></a>
+    </nav>
+  </div>
+  <div class="topbar-end">
+    <span class="version" id="app-version"></span>
+    <button class="icon ghost" id="theme-toggle" type="button" aria-label="切换深浅主题" title="切换深浅主题"></button>
+    <a class="icon-link" id="btn-settings" href="#/settings" aria-label="设置" title="设置">
+      <svg class="icon icon-settings" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M4 17h16"/><circle cx="9" cy="7" r="3" fill="var(--surface)"/><circle cx="15" cy="17" r="3" fill="var(--surface)"/></svg>
+    </a>
+    <div class="window-controls" id="window-controls" hidden>
+      <button class="window-btn" type="button" data-window="minimize" title="最小化" aria-label="最小化"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h10"/></svg></button>
+      <button class="window-btn" type="button" data-window="maximize" title="最大化 / 还原" aria-label="最大化或还原"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="3.5" y="3.5" width="9" height="9" rx="1.5"/></svg></button>
+      <button class="window-btn close" type="button" data-window="close" title="关闭" aria-label="关闭"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="m4 4 8 8M12 4l-8 8"/></svg></button>
+    </div>
+  </div>
+</header>
+<main id="app" class="app"></main>
+<div id="modal-root"></div>
+<div id="agent-root" class="agent-root"></div>
+<div id="toast-root" class="toast-root" aria-live="polite"></div>
+<script type="module" src="/static/app.js?v=20261026-performance1"></script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

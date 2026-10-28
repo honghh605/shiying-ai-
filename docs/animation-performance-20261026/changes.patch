@@ -1,0 +1,366 @@
+--- before/app.js
++++ after/app.js
+@@ -1,5 +1,5 @@
+ import { evaluateFrameBudget } from './frame-budget.js?v=20261021-perf1';
+-import { initReleaseMotion, animateMenuOpen, animateMenuClose } from './release-motion.js?v=20261025-motion5';
++import { initReleaseMotion, animateMenuOpen, animateMenuClose } from './release-motion.js?v=20261026-performance1';
+ 
+ const app = document.querySelector('#app');
+ const modalRoot = document.querySelector('#modal-root');
+@@ -827,15 +827,15 @@
+   const token = ++pageVeilToken;
+   const veil = pageVeilNode();
+   veil.classList.add('show');
+-  // 只让浏览器提交一帧遮罩，不再人为等待 130ms。
+-  await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+-  if (token !== pageVeilToken) return;
+-  await update();
+-  if (token !== pageVeilToken) return;
+-  requestAnimationFrame(() => {
+-    if (token !== pageVeilToken) return;
+-    veil.classList.remove('show');
+-  });
++  // Begin loading in this event turn. The existing veil can paint while the
++  // request is pending; an animation must never delay the user's navigation.
++  try {
++    await update();
++  } finally {
++    requestAnimationFrame(() => {
++      if (token === pageVeilToken) veil.classList.remove('show');
++    });
++  }
+ }
+ 
+ function finishLaunch() {
+@@ -3711,21 +3711,25 @@
+   const viewport = node.querySelector('#pi-minimap-view');
+   const baseW = img.clientWidth || 1;
+   const baseH = img.clientHeight || 1;
++  // Read geometry before changing the image, label or minimap classes.
++  const stageW = stage.clientWidth;
++  const stageH = stage.clientHeight;
+   img.style.transformOrigin = 'center center';
+   img.style.transform = `translate(${inspectOffsetX}px, ${inspectOffsetY}px) scale(${inspectScale})`;
+-  zoomLabel.textContent = `${Math.round(inspectScale * 100)}%`;
++  const label = `${Math.round(inspectScale * 100)}%`;
++  if (zoomLabel.textContent !== label) zoomLabel.textContent = label;
+   const zoomed = inspectScale > 1.01;
+   node.classList.toggle('is-zoomed', zoomed);
+   minimap.classList.toggle('show', zoomed);
+   if (!zoomed) return;
+   const scaledW = baseW * inspectScale;
+   const scaledH = baseH * inspectScale;
+-  const left = (stage.clientWidth - scaledW) / 2 + inspectOffsetX;
+-  const top = (stage.clientHeight - scaledH) / 2 + inspectOffsetY;
++  const left = (stageW - scaledW) / 2 + inspectOffsetX;
++  const top = (stageH - scaledH) / 2 + inspectOffsetY;
+   const x0 = Math.max(0, Math.min(1, -left / scaledW));
+-  const x1 = Math.max(0, Math.min(1, (stage.clientWidth - left) / scaledW));
++  const x1 = Math.max(0, Math.min(1, (stageW - left) / scaledW));
+   const y0 = Math.max(0, Math.min(1, -top / scaledH));
+-  const y1 = Math.max(0, Math.min(1, (stage.clientHeight - top) / scaledH));
++  const y1 = Math.max(0, Math.min(1, (stageH - top) / scaledH));
+   viewport.style.left = `${x0 * 100}%`;
+   viewport.style.top = `${y0 * 100}%`;
+   viewport.style.width = `${Math.max(2, (x1 - x0) * 100)}%`;
+@@ -3873,6 +3877,7 @@
+   node._rmCueCleanup = () => { clearTimeout(cueTimer); cueResize?.disconnect(); };
+   const stage = node.querySelector('.pi-image');
+   const image = node.querySelector('#pi-image');
++  let panFrame = 0;
+   stage.addEventListener('wheel', (event) => {
+     event.preventDefault();
+     zoomInspectAt(node, event.deltaY < 0 ? 1.22 : 1 / 1.22, event.clientX, event.clientY);
+@@ -3889,9 +3894,17 @@
+     if (!inspectDragging || !inspectDragStart) return;
+     inspectOffsetX = inspectDragStart.ox + (event.clientX - inspectDragStart.x);
+     inspectOffsetY = inspectDragStart.oy + (event.clientY - inspectDragStart.y);
+-    updateInspectView(node);
++    if (!panFrame) panFrame = requestAnimationFrame(() => {
++      panFrame = 0;
++      updateInspectView(node);
++    });
+   });
+   const endPan = () => {
++    if (panFrame) {
++      cancelAnimationFrame(panFrame);
++      panFrame = 0;
++      updateInspectView(node);
++    }
+     inspectDragging = false;
+     inspectDragStart = null;
+     node.classList.remove('is-panning');
+--- before/release-motion.js
++++ after/release-motion.js
+@@ -20,6 +20,26 @@
+ let settingsRefreshFrame = 0;
+ let settingsJumpCleanup = null;
+ let batchBindFrame = 0;
++const structureSubscriptions = [];
++let structureObserver = null;
++
++// Text updates (counters, range values, streamed text) are not structural changes.
++// One observer routes only relevant inserted/removed elements to each motion layer.
++function watchStructure(selector, refresh) {
++  structureSubscriptions.push({ selector, refresh });
++  if (structureObserver) return;
++  structureObserver = new MutationObserver(records => {
++    const nodes = records.flatMap(record => [...record.addedNodes, ...record.removedNodes])
++      .filter(node => node.nodeType === 1);
++    if (!nodes.length) return;
++    for (const subscription of structureSubscriptions) {
++      if (nodes.some(node => node.matches(subscription.selector) || node.querySelector(subscription.selector))) {
++        subscription.refresh();
++      }
++    }
++  });
++  structureObserver.observe(document.body, { childList: true, subtree: true });
++}
+ 
+ function canAnimate() {
+   // The app maps OS reduce + 'system' preference to data-motion=off.
+@@ -38,9 +58,11 @@
+       ...options,
+     });
+     animated.set(node, animation);
+-    animation.finished.then(() => {
++    const release = () => {
+       if (animated.get(node) === animation) animated.delete(node);
+-    }, () => {});
++      animation.cancel();
++    };
++    animation.finished.then(release, release);
+     return animation;
+   } catch (_) {
+     return null;
+@@ -49,9 +71,9 @@
+ 
+ function pulseClass(node, className, duration = 420) {
+   if (!node || !canAnimate()) return;
+-  node.classList.remove(className);
+-  // Force a new animation even when two clicks land in the same frame.
+-  void node.offsetWidth;
++  // Keep a running pulse continuous during a drag instead of forcing layout
++  // and restarting it on every input event.
++  if (node.classList.contains(className)) return;
+   node.classList.add(className);
+   clearTimeout(node._rmPulseTimer);
+   node._rmPulseTimer = setTimeout(() => node.classList.remove(className), duration);
+@@ -125,8 +147,6 @@
+         return;
+       }
+       target.dataset.rmVisible = '1';
+-      target.classList.remove('rm-batch-enter');
+-      void target.offsetWidth;
+       target.classList.add('rm-batch-enter');
+       clearTimeout(target._rmBatchTimer);
+       target._rmBatchTimer = setTimeout(() => target.classList.remove('rm-batch-enter'), 560);
+@@ -135,18 +155,16 @@
+     if (target.children.length) {
+       // renderBatchActions() writes the first content before this observer exists.
+       target.dataset.rmVisible = '1';
+-      target.classList.remove('rm-batch-enter');
+-      void target.offsetWidth;
+       target.classList.add('rm-batch-enter');
+       clearTimeout(target._rmBatchTimer);
+       target._rmBatchTimer = setTimeout(() => target.classList.remove('rm-batch-enter'), 560);
+     }
+   };
+   bindBatch();
+-  new MutationObserver(() => {
++  watchStructure('#batch-actions', () => {
+     if (batchBindFrame) return;
+     batchBindFrame = requestAnimationFrame(() => { batchBindFrame = 0; bindBatch(); });
+-  }).observe(document.body, { childList: true, subtree: true });
++  });
+ }
+ 
+ /* ---------- 滚动进度、滚动边缘与顶栏状态 ---------- */
+@@ -200,29 +218,37 @@
+   document.addEventListener('scroll', (event) => {
+     if (event.target?.classList?.contains('review-grid-col') || event.target?.classList?.contains('review-detail')) scheduleGrid();
+   }, { passive: true, capture: true });
+-  new MutationObserver(scheduleGrid).observe(document.body, { childList: true, subtree: true });
++  watchStructure('.review-grid-col, #photo-grid, .source-group, .frame', scheduleGrid);
+   scheduleGrid();
+ }
+ 
+ /* ---------- 滑块：填充、拖动与数字反馈 ---------- */
+ 
+-function paintRange(input) {
++function paintRange(input, feedback = false) {
+   if (!input || input.type !== 'range') return;
+   const min = Number(input.min || 0);
+   const max = Number(input.max || 100);
+   const value = Number(input.value || 0);
+   const progress = max > min ? ((value - min) / (max - min)) * 100 : 0;
+-  input.style.setProperty('--rm-range-progress', `${Math.max(0, Math.min(100, progress))}%`);
++  const fill = `${Math.max(0, Math.min(100, progress))}%`;
++  if (input.style.getPropertyValue('--rm-range-progress') === fill) return;
++  input.style.setProperty('--rm-range-progress', fill);
+   const output = input.parentElement?.querySelector?.('output') || input.closest('label')?.querySelector?.('output');
+-  if (output) pulseClass(output, 'rm-state-pop', 320);
++  if (output && feedback) pulseClass(output, 'rm-state-pop', 320);
+ }
+ 
+ function initRanges() {
+   if (!rangeBridge) {
++    const pending = new Set();
+     rangeBridge = (event) => {
+       const input = event.target.closest?.('input[type="range"]');
+       if (!input) return;
+-      paintRange(input);
++      pending.add(input);
++      if (!rangePaintFrame) rangePaintFrame = requestAnimationFrame(() => {
++        rangePaintFrame = 0;
++        pending.forEach(node => { if (node.isConnected) paintRange(node, true); });
++        pending.clear();
++      });
+       input.classList.add('rm-dragging');
+       clearTimeout(input._rmDragTimer);
+       input._rmDragTimer = setTimeout(() => input.classList.remove('rm-dragging'), 260);
+@@ -230,19 +256,11 @@
+     document.addEventListener('input', rangeBridge, { passive: true });
+     document.addEventListener('change', rangeBridge, { passive: true });
+   }
+-  document.querySelectorAll('input[type="range"]').forEach(paintRange);
+-  if ('MutationObserver' in window) {
+-    if (!rangeMutation) {
+-      rangeMutation = new MutationObserver(() => {
+-        if (!document.querySelector('#settings-jump') || rangePaintFrame) return;
+-        rangePaintFrame = requestAnimationFrame(() => {
+-          rangePaintFrame = 0;
+-          if (!document.querySelector('#settings-jump')) return;
+-          document.querySelectorAll('input[type="range"]').forEach(paintRange);
+-        });
+-      });
+-      rangeMutation.observe(document.body, { childList: true, subtree: true });
+-    }
++  const refresh = () => document.querySelectorAll('input[type="range"]').forEach(input => paintRange(input));
++  refresh();
++  if (!rangeMutation) {
++    rangeMutation = true;
++    watchStructure('input[type="range"]', refresh);
+   }
+ }
+ 
+@@ -296,10 +314,10 @@
+   settingsJumpCleanup?.();
+   if (settingsObserver) settingsObserver.disconnect();
+ 
+-  const orderedSections = () => buttons
++  const sections = buttons
+     .map((button) => document.getElementById(button.dataset.settingsTarget))
+     .filter(Boolean)
+-    .sort((a, b) => a.getBoundingClientRect().top - b.getBoundingClientRect().top);
++    .sort((a, b) => a === b ? 0 : (a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1));
+   const activate = (button, animate = true) => {
+     if (!button) return;
+     buttons.forEach((item) => item.classList.toggle('active', item === button));
+@@ -309,7 +327,6 @@
+   activate(initial, false);
+ 
+   const currentSection = () => {
+-    const sections = orderedSections();
+     if (!sections.length) return null;
+     // The last section may never cross the threshold on a short page; bottom wins.
+     if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4) {
+@@ -344,7 +361,7 @@
+   }, { threshold: 0.06 });
+ 
+   const observeSections = () => {
+-    orderedSections().forEach((section) => {
++    sections.forEach((section) => {
+       if (!settingsSectionsSeen.has(section)) settingsObserver.observe(section);
+     });
+   };
+@@ -354,8 +371,7 @@
+     if (settingsJumpFrame) return;
+     settingsJumpFrame = requestAnimationFrame(() => {
+       settingsJumpFrame = 0;
+-      refreshActive();
+-      observeSections();
++      if (jump.isConnected) refreshActive();
+     });
+   };
+   window.addEventListener('scroll', onScroll, { passive: true });
+@@ -373,21 +389,24 @@
+     window.removeEventListener('scroll', onScroll);
+     window.removeEventListener('resize', onResize);
+     if (settingsObserver) settingsObserver.disconnect();
++    cancelAnimationFrame(settingsJumpFrame);
++    settingsJumpFrame = 0;
+     settingsJumpCleanup = null;
+   };
+ }
+ 
+ function refreshSettingsJump() {
+   if (settingsMutation) return;
+-  settingsMutation = new MutationObserver(() => {
+-    if (!document.querySelector('#settings-jump') || settingsRefreshFrame) return;
++  settingsMutation = true;
++  watchStructure('#settings-jump', () => {
++    if (settingsRefreshFrame) return;
+     settingsRefreshFrame = requestAnimationFrame(() => {
+       settingsRefreshFrame = 0;
+-      if (!document.querySelector('#settings-jump')) return;
++      if (!document.querySelector('#settings-jump')) { settingsJumpCleanup?.(); return; }
+       initSettingsJump();
+     });
+   });
+-  settingsMutation.observe(document.body, { childList: true, subtree: true });
++  initSettingsJump();
+ }
+ 
+ /* ---------- 轻量请求状态 ---------- */
+--- before/release-motion.css
++++ after/release-motion.css
+@@ -432,7 +432,7 @@
+   box-shadow: inset 0 1px 0 rgb(255 255 255 / .22), 0 5px 16px rgb(2 14 26 / .12), 0 0 0 1px color-mix(in srgb, var(--accent) 10%, transparent);
+   transform-origin: center;
+ }
+-.settings-section.rm-section-visible {
++.settings-section.rm-section-visible:not(.wave-card) {
+   animation: rm-section-enter 380ms var(--rm-spring) both;
+ }
+ @keyframes rm-section-enter {
+@@ -698,7 +698,6 @@
+   transition:
+     opacity 200ms var(--rm-exit),
+     transform 420ms var(--rm-spring),
+-    padding 380ms var(--rm-spring),
+     border-color 180ms var(--rm-exit) !important;
+ }
+ html[data-motion="on"] .review-page .review-body.detail-collapsed .review-detail {
+@@ -1572,3 +1571,11 @@
+   height: 34px;
+ }
+ .folder-new-row button { flex: none; }
++
++/* Direct manipulation follows the pointer; keep the existing eased zoom for
++   wheel/double-click and all settled colors, glass and layout unchanged. */
++.photo-inspect.is-panning .pi-image img {
++  transition: none !important;
++}
++/* The shared menu animation already handles entry and interruption. */
++html[data-style] .photo-context-menu { animation: none !important; }
+--- before/index.html
++++ after/index.html
+@@ -33,7 +33,7 @@
+ <link rel="stylesheet" href="/static/picker.css?v=20261026-final5">
+ <link rel="stylesheet" href="/static/review-actions.css?v=20261026-final5">
+ <link rel="stylesheet" href="/static/glass-fix.css?v=20261026-final5">
+-<link rel="stylesheet" href="/static/release-motion.css?v=20261026-final5">
++<link rel="stylesheet" href="/static/release-motion.css?v=20261026-performance1">
+ </head>
+ <body>
+ <div id="wallpaper-layer" aria-hidden="true"><video id="wallpaper-video" muted loop playsinline preload="auto"></video><iframe id="wallpaper-scene" title="动态壁纸" allow="autoplay" loading="lazy"></iframe></div>
+@@ -83,7 +83,7 @@
+ <div id="modal-root"></div>
+ <div id="agent-root" class="agent-root"></div>
+ <div id="toast-root" class="toast-root" aria-live="polite"></div>
+-<script type="module" src="/static/app.js?v=20261026-final5"></script>
++<script type="module" src="/static/app.js?v=20261026-performance1"></script>
+ </body>
+ </html>
+ 

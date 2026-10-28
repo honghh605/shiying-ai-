@@ -1,0 +1,38 @@
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Local build / release artifacts
+dist/
+build/
+backups/
+*.exe
+*.zip
+*.7z
+
+# Large local models: download with scripts/setup_models.ps1 or from Releases
+app/models/*.onnx
+
+# Local data
+*.db
+*.db-shm
+*.db-wal
+logs/
+*.log
+.design-review/
+体验样片-*/
+宣传片-*/
+shots/
+*.local
+
+# Local-only helper scripts with machine-specific paths
+打开*.cmd
+启动*.cmd
+
+# Release assets generated locally
+release-assets/

@@ -1,0 +1,1581 @@
+/* ==========================================================================
+   拾影 · 发布前动效层
+   只负责交互反馈、弹层/页面转场与微动效；不改变任何业务布局和材质配色。
+   加载顺序：所有既有 CSS 之后。
+   ========================================================================== */
+
+:root {
+  --rm-press: 100ms;
+  --rm-feedback: 180ms;
+  --rm-pop: 300ms;
+  --rm-panel: 420ms;
+  --rm-modal: 460ms;
+  --rm-page: 360ms;
+  --rm-spring: cubic-bezier(.16, 1, .3, 1);
+  --rm-overshoot: cubic-bezier(.2, 1.18, .35, 1);
+  --rm-exit: cubic-bezier(.4, 0, .2, 1);
+  --rm-ease-soft: cubic-bezier(.33, 1, .68, 1);
+  --rm-focus: color-mix(in srgb, var(--accent) 58%, transparent);
+  --rm-shadow-lift: 0 12px 28px rgb(2 14 26 / .18);
+}
+
+/* ---------- 全局：可打断的按压与焦点反馈 ---------- */
+
+html[data-motion="on"] :is(
+  button:not([disabled]), a, [role="button"], .choice, .filter-item,
+  .style-card, .roll, .frame, .folder-item, .file-row, .settings-jump button
+) {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+html[data-motion="on"] .rm-pressed {
+  filter: brightness(.965) saturate(1.035);
+}
+
+html[data-motion="on"] :is(button, a, [role="button"], input, select, textarea, .filter-item, .choice, .settings-jump button):focus-visible {
+  outline: none !important;
+  box-shadow: 0 0 0 3px var(--rm-focus) !important;
+  border-color: color-mix(in srgb, var(--accent) 60%, var(--line)) !important;
+}
+
+html[data-motion="on"] :is(button, a, [role="button"]):active {
+  filter: brightness(.965);
+}
+
+/* 卡片：只做轻微抬升/描边，不改变照片网格布局 */
+html[data-motion="on"] .roll {
+  transition: transform var(--rm-pop) var(--rm-spring), box-shadow var(--rm-pop) var(--rm-spring), border-color var(--rm-feedback) var(--rm-spring) !important;
+}
+html[data-motion="on"] .roll:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 18px 44px rgb(2 14 26 / .22);
+}
+html[data-motion="on"] .frame {
+  transition: transform var(--rm-pop) var(--rm-spring), border-color var(--rm-feedback) var(--rm-spring), box-shadow var(--rm-feedback) var(--rm-spring);
+}
+html[data-motion="on"] .frame:hover {
+  border-color: color-mix(in srgb, var(--accent) 38%, var(--line)) !important;
+  box-shadow: 0 10px 24px rgb(2 14 26 / .16);
+}
+html[data-motion="on"] .frame.selected {
+  border-color: color-mix(in srgb, var(--accent) 74%, var(--line)) !important;
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 48%, transparent), 0 12px 30px rgb(2 14 26 / .20);
+}
+html[data-motion="on"] .frame.picked::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  box-shadow: inset 0 0 0 2px var(--accent);
+  animation: rm-pick-ring 360ms var(--rm-spring) both;
+}
+@keyframes rm-pick-ring {
+  0% { opacity: 0; scale: .92; }
+  55% { opacity: 1; scale: 1.015; }
+  100% { opacity: 1; scale: 1; }
+}
+
+/* 点击波纹：更柔、更短，避免盖住照片 */
+html[data-motion="on"] .tap-ripple {
+  animation-duration: 380ms !important;
+  opacity: .72;
+}
+
+/* ---------- 弹窗：玻璃底同帧出现，内容层负责入场/退场 ---------- */
+
+.modal-mask {
+  background: transparent;
+  align-items: center;
+  justify-content: center;
+}
+.modal-scrim {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: rgb(7 16 23 / .40);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 260ms var(--rm-spring);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+}
+.modal-mask.rm-ready .modal-scrim { opacity: 1; }
+.modal-mask > .modal {
+  position: relative;
+  z-index: 1;
+}
+.modal-inner {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+}
+.modal-inner > .m-head { flex: none; }
+.modal-inner > .m-body { min-height: 0; }
+.modal-inner > .m-foot { flex: none; }
+.modal {
+  will-change: transform;
+}
+.modal::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  background: linear-gradient(108deg, transparent 30%, rgb(255 255 255 / .13) 47%, transparent 62%);
+  transform: translateX(-125%);
+  opacity: 0;
+}
+html[data-motion="on"] .modal.rm-entering::after {
+  opacity: 1;
+  animation: rm-modal-sheen 680ms var(--rm-spring) 40ms both;
+}
+@keyframes rm-modal-sheen {
+  from { transform: translateX(-125%); opacity: 0; }
+  28% { opacity: .8; }
+  to { transform: translateX(125%); opacity: 0; }
+}
+html[data-motion="on"] .modal-mask.rm-leaving {
+  pointer-events: none !important;
+}
+html[data-motion="on"] .modal-mask.rm-leaving .modal-inner {
+  will-change: transform, opacity;
+}
+
+/* 首配弹窗仍然使用它自己的整窗 Q 弹，不叠加内容层动画 */
+html[data-motion="off"] .modal.first-run-modal {
+  animation: none !important;
+}
+
+/* ---------- 页面切换：只动页面内容，顶栏保持稳定 ---------- */
+
+.topbar { view-transition-name: rm-topbar; }
+@supports (view-transition-name: none) {
+  ::view-transition-old(rm-topbar),
+  ::view-transition-new(rm-topbar) {
+    animation: none !important;
+    mix-blend-mode: normal;
+  }
+  /* 页面切换：旧页立即退场，新页保持完全不透明地滑入。
+     不在玻璃快照上做 opacity，避免中间帧透出壁纸、文字失去对比。 */
+  html[data-vt="page"]::view-transition-old(root) {
+    animation: none !important;
+    opacity: 0 !important;
+  }
+  html[data-vt="page"]::view-transition-new(root) {
+    animation: rm-page-slide var(--rm-page) var(--rm-spring) both !important;
+    opacity: 1 !important;
+  }
+  html[data-style="liquid"][data-vt="page"]::view-transition-old(root) {
+    animation: none !important;
+    opacity: 0 !important;
+  }
+  html[data-style="liquid"][data-vt="page"]::view-transition-new(root) {
+    animation: rm-page-slide var(--rm-page) var(--rm-spring) both !important;
+    opacity: 1 !important;
+  }
+}
+@keyframes rm-page-slide {
+  from { transform: translateY(var(--rm-page-y, 7px)) scale(.996); }
+  to { transform: none; }
+}
+
+
+/* 弹窗退场：不只内容层，遮罩和玻璃壳也一起退，避免最后整块瞬移消失 */
+.modal-mask.rm-leaving { pointer-events: none !important; }
+.modal-mask.rm-leaving .modal-scrim {
+  opacity: 0 !important;
+  transition: opacity 180ms var(--rm-exit) !important;
+}
+.modal-mask.rm-leaving .modal {
+  opacity: 0 !important;
+  transform: translateY(10px) scale(.986) !important;
+  transition:
+    opacity 180ms var(--rm-exit),
+    transform 220ms var(--rm-exit) !important;
+}
+
+/* ---------- 菜单、右键菜单、提示 ---------- */
+
+.more-menu {
+  transform-origin: top right;
+  will-change: transform, opacity;
+}
+.photo-context-menu {
+  transform-origin: top left;
+  will-change: transform, opacity;
+}
+@keyframes rm-menu-in {
+  from { opacity: 0; transform: translateY(-6px) scale(.975); }
+  65% { opacity: 1; transform: translateY(1px) scale(1.006); }
+  to { opacity: 1; transform: none; }
+}
+html[data-motion="on"] .rm-menu-leaving {
+  pointer-events: none !important;
+}
+
+/* ---------- 批量操作栏 ---------- */
+
+#batch-actions {
+  transition: opacity var(--rm-feedback) ease;
+}
+#batch-actions.rm-batch-enter > * {
+  animation: rm-batch-in 300ms var(--rm-spring) both;
+}
+#batch-actions.rm-batch-enter > *:nth-child(2) { animation-delay: 16ms; }
+#batch-actions.rm-batch-enter > *:nth-child(3) { animation-delay: 32ms; }
+#batch-actions.rm-batch-enter > *:nth-child(4) { animation-delay: 48ms; }
+#batch-actions.rm-batch-enter > *:nth-child(5) { animation-delay: 64ms; }
+#batch-actions.rm-batch-enter > *:nth-child(6) { animation-delay: 80ms; }
+@keyframes rm-batch-in {
+  from { opacity: 0; transform: translateY(-5px) scale(.96); }
+  to { opacity: 1; transform: none; }
+}
+
+/* ---------- 抽屉、详情、Agent ---------- */
+
+.review-drawer {
+  transition:
+    transform var(--rm-panel) var(--rm-spring),
+    opacity 220ms var(--rm-spring) !important;
+}
+.review-drawer::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: rgb(4 12 20 / .24);
+  opacity: 0;
+  transition: opacity 240ms var(--rm-spring);
+}
+.review-drawer.open::before { opacity: 1; }
+.review-drawer.open .review-drawer-head,
+.review-drawer.open .review-drawer-host {
+  animation: rm-drawer-content-in var(--rm-panel) var(--rm-spring) both;
+}
+.review-drawer.open .review-drawer-host { animation-delay: 45ms; }
+@keyframes rm-drawer-content-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
+}
+.review-drawer.closing {
+  transition-duration: 220ms, 180ms !important;
+  transition-timing-function: var(--rm-exit) !important;
+}
+
+.activity-overview-body {
+  transition: grid-template-rows 360ms var(--rm-spring), opacity 240ms var(--rm-spring) !important;
+}
+.activity-overview-drawer:not(.collapsed) .activity-overview-inner > * {
+  animation: rm-section-in 340ms var(--rm-spring) both;
+}
+.activity-overview-drawer:not(.collapsed) .activity-overview-inner > *:nth-child(2) { animation-delay: 30ms; }
+.activity-overview-drawer:not(.collapsed) .activity-overview-inner > *:nth-child(3) { animation-delay: 60ms; }
+.activity-overview-drawer:not(.collapsed) .activity-overview-inner > *:nth-child(4) { animation-delay: 90ms; }
+
+.review-detail {
+  transition:
+    opacity 200ms var(--rm-spring),
+    transform var(--rm-panel) var(--rm-spring),
+    padding var(--rm-panel) var(--rm-spring) !important;
+}
+.review-body.detail-collapsed .review-detail {
+  transform: translateX(30px) scale(.985) !important;
+}
+.review-detail .detail-image {
+  transition: transform var(--rm-panel) var(--rm-spring), opacity var(--rm-feedback) ease;
+}
+
+.agent-panel {
+  transition:
+    transform 520ms var(--rm-spring),
+    opacity 240ms var(--rm-spring),
+    box-shadow 320ms var(--rm-spring) !important;
+  will-change: transform, opacity;
+}
+.agent-scrim {
+  background: rgb(5 13 20 / .22);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  transition: opacity 260ms var(--rm-spring) !important;
+}
+.agent-root.open .agent-scrim { opacity: 1; }
+.agent-results {
+  transition: opacity 220ms var(--rm-spring), transform 420ms var(--rm-spring) !important;
+}
+.agent-msg {
+  animation: rm-msg-in 300ms var(--rm-spring) both !important;
+}
+.agent-msg-bubble { transform-origin: left bottom; }
+.agent-msg.user .agent-msg-bubble { transform-origin: right bottom; }
+@keyframes rm-msg-in {
+  from { opacity: 0; transform: translateY(8px) scale(.975); }
+  to { opacity: 1; transform: none; }
+}
+
+
+/* 照片详情：在液态玻璃透明面板下垫一层影院暗场，避免与背后复核页文字互相穿透 */
+.photo-inspect::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: color-mix(in srgb, #020b13 88%, transparent);
+  backdrop-filter: blur(8px) saturate(90%);
+  -webkit-backdrop-filter: blur(7px) saturate(90%);
+}
+.photo-inspect > * { position: relative; z-index: 1; }
+.photo-inspect .pi-card,
+.photo-inspect .pi-top {
+  background:
+    linear-gradient(150deg, rgb(255 255 255 / .14), rgb(255 255 255 / .035) 55%, rgb(8 26 38 / .12)),
+    color-mix(in srgb, #07131f 48%, transparent) !important;
+  border-color: rgb(255 255 255 / .22) !important;
+  box-shadow: 0 18px 48px rgb(1 8 14 / .34), inset 0 1px 0 rgb(255 255 255 / .14) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(140%) !important;
+  backdrop-filter: blur(24px) saturate(140%) !important;
+}
+.photo-inspect .pi-card,
+.photo-inspect .pi-top { color: #eaf7fb !important; }
+.photo-inspect .pi-top .pi-eyebrow,
+.photo-inspect .pi-top .hint,
+.photo-inspect .pi-card .hint,
+.photo-inspect .pi-kv span,
+.photo-inspect .pi-check-name,
+.photo-inspect .pi-check small,
+.photo-inspect .pi-ai-summary span { color: #a9c7d5 !important; }
+.photo-inspect .pi-card h3,
+.photo-inspect .pi-top b { color: #f2fbff !important; }
+.photo-inspect .pi-kv b,
+.photo-inspect .pi-check-result { color: #eaf7fb !important; }
+.photo-inspect .pi-check.good .pi-check-result,
+.photo-inspect .pi-ai-summary.good b { color: #7ff0c8 !important; }
+.photo-inspect .pi-check.bad .pi-check-result,
+.photo-inspect .pi-ai-summary.bad b { color: #ff9d94 !important; }
+.photo-inspect .pi-check {
+  background: rgb(255 255 255 / .055) !important;
+  border-color: rgb(255 255 255 / .10) !important;
+}
+.photo-inspect .pi-check-name,
+.photo-inspect .pi-check-result,
+.photo-inspect .pi-check small,
+.photo-inspect .pi-kv span,
+.photo-inspect .pi-kv b,
+.photo-inspect .pi-ai-summary span { color: #d6eef5 !important; }
+.photo-inspect .pi-ai-summary { background: rgb(111 227 193 / .10) !important; }
+.photo-inspect .pi-ai-summary.bad { background: rgb(255 120 110 / .12) !important; }
+.photo-inspect .pi-ai-summary.good { background: rgb(111 227 193 / .12) !important; }
+
+
+/* 活动页内嵌复核首次展开：不要让整块工作台突然出现 */
+html[data-motion="on"] .activity-inline-review:not([hidden]) .review-page {
+  animation: rm-inline-review-in 420ms var(--rm-spring) both;
+  transform-origin: 50% 0;
+}
+@keyframes rm-inline-review-in {
+  from { opacity: 0; transform: translateY(12px) scale(.994); }
+  to { opacity: 1; transform: none; }
+}
+
+/* 照片详情：更快进入、更柔和退出 */
+.photo-inspect {
+  transition: opacity 220ms var(--rm-spring), transform 340ms var(--rm-spring) !important;
+}
+.photo-inspect.closing {
+  opacity: 0 !important;
+  transform: scale(.985) translateY(8px) !important;
+  transition-duration: 180ms, 220ms !important;
+  transition-timing-function: var(--rm-exit) !important;
+}
+@keyframes rm-inspect-in {
+  from { opacity: 0; transform: scale(.985) translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+.photo-inspect.open .pi-side,
+.photo-inspect.open .pi-top {
+  animation: rm-section-in 360ms var(--rm-spring) both;
+}
+.photo-inspect.open .pi-side { animation-delay: 50ms; }
+@keyframes rm-section-in {
+  from { opacity: 0; transform: translateY(9px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* ---------- 设置：分区导航滑块、滑块填充、section 入场 ---------- */
+
+.settings-jump {
+  isolation: isolate;
+}
+.settings-jump button {
+  position: relative;
+  z-index: 1;
+  transition: color var(--rm-feedback) var(--rm-spring) !important;
+}
+html[data-style] #settings-jump.has-rm-indicator button.active {
+  background: transparent !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+}
+.rm-jump-indicator {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: color-mix(in srgb, var(--accent-soft) 72%, var(--panel-background));
+  border: 1px solid color-mix(in srgb, var(--accent) 38%, transparent);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / .22), 0 5px 16px rgb(2 14 26 / .12), 0 0 0 1px color-mix(in srgb, var(--accent) 10%, transparent);
+  transform-origin: center;
+}
+.settings-section.rm-section-visible:not(.wave-card) {
+  animation: rm-section-enter 380ms var(--rm-spring) both;
+}
+@keyframes rm-section-enter {
+  from { opacity: .72; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+
+input[type="range"] {
+  --rm-range-progress: 50%;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 28px;
+  background: transparent !important;
+}
+input[type="range"]::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--accent) 0 var(--rm-range-progress), color-mix(in srgb, var(--ink) 14%, transparent) var(--rm-range-progress) 100%);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / .12);
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  margin-top: -6px;
+  border-radius: 50%;
+  border: 2px solid color-mix(in srgb, var(--accent) 70%, #ffffff);
+  background: var(--surface, #fff);
+  box-shadow: 0 2px 8px rgb(2 14 26 / .22), 0 0 0 0 rgb(111 227 193 / .25);
+  transition: transform var(--rm-press) var(--rm-spring), box-shadow var(--rm-feedback) var(--rm-spring);
+}
+input[type="range"]:active::-webkit-slider-thumb {
+  transform: scale(1.18);
+  box-shadow: 0 3px 12px rgb(2 14 26 / .28), 0 0 0 5px rgb(111 227 193 / .18);
+}
+input[type="range"]:focus-visible::-webkit-slider-thumb {
+  box-shadow: 0 0 0 4px var(--rm-focus), 0 2px 8px rgb(2 14 26 / .22);
+}
+input[type="range"] + output {
+  transition: transform var(--rm-feedback) var(--rm-spring), color var(--rm-feedback) ease;
+  font-variant-numeric: tabular-nums;
+}
+input[type="range"].rm-dragging + output {
+  color: var(--accent);
+  transform: translateY(-1px) scale(1.06);
+}
+
+/* ---------- 滚动反馈 ---------- */
+
+.rm-scroll-progress {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: var(--header-h, 64px);
+  height: 2px;
+  z-index: 34;
+  pointer-events: none;
+  opacity: 0;
+  transform-origin: left center;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 65%, transparent), var(--accent));
+  box-shadow: 0 0 12px color-mix(in srgb, var(--accent) 38%, transparent);
+  transition: opacity 240ms ease;
+}
+.rm-scroll-progress.show { opacity: 1; }
+body.rm-scrolled .topbar {
+  box-shadow: 0 10px 34px rgb(2 14 26 / .13), 0 1px 0 color-mix(in srgb, var(--line) 70%, transparent);
+}
+.review-grid-col { position: relative; }
+.review-grid-col.rm-scrollable::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 10px;
+  bottom: 0;
+  height: 44px;
+  pointer-events: none;
+  background: linear-gradient(180deg, transparent, color-mix(in srgb, var(--canvas) 48%, transparent));
+  opacity: var(--rm-edge-bottom, 0);
+  transition: opacity 180ms ease;
+}
+
+/* ---------- 轻量处理中指示 ---------- */
+
+.rm-net-indicator {
+  position: fixed;
+  right: 18px;
+  top: calc(var(--header-h, 64px) + 10px);
+  z-index: 80;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--panel-stroke, var(--line)) 82%, transparent);
+  background: var(--panel-background, var(--surface));
+  color: var(--muted);
+  font-size: 11px;
+  letter-spacing: .03em;
+  box-shadow: 0 9px 24px rgb(2 14 26 / .13);
+  backdrop-filter: blur(12px) saturate(120%);
+  -webkit-backdrop-filter: blur(12px) saturate(120%);
+  opacity: 0;
+  transform: translateY(-5px);
+  pointer-events: none;
+  transition: opacity 220ms var(--rm-spring), transform var(--rm-panel) var(--rm-spring);
+}
+.rm-net-indicator.show { opacity: 1; transform: none; }
+.rm-net-indicator i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 35%, transparent);
+  animation: rm-net-pulse 1.25s ease-in-out infinite;
+}
+@keyframes rm-net-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 30%, transparent); opacity: .7; }
+  50% { box-shadow: 0 0 0 6px transparent; opacity: 1; }
+}
+
+/* ---------- Toast 升级 ---------- */
+
+.toast-root { gap: 9px; }
+html[data-style] #toast-root .toast {
+  background: color-mix(in srgb, #07131f 94%, transparent) !important;
+  color: #eef8fc !important;
+  border-color: rgb(255 255 255 / .14) !important;
+  box-shadow: 0 12px 34px rgb(2 10 18 / .40), inset 0 1px 0 rgb(255 255 255 / .07) !important;
+  -webkit-backdrop-filter: blur(14px) saturate(120%);
+  backdrop-filter: blur(14px) saturate(120%);
+  overflow: hidden;
+  min-width: 220px;
+  max-width: min(440px, calc(100vw - 32px));
+  padding: 12px 16px 13px;
+  border-radius: 13px !important;
+  cursor: default;
+  transition: transform 180ms var(--rm-spring), opacity 180ms ease;
+}
+.toast.rm-toast-leaving {
+  pointer-events: none !important;
+}
+.toast::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 2px;
+  width: 100%;
+  transform-origin: left center;
+  background: color-mix(in srgb, var(--accent) 76%, transparent);
+  animation: rm-toast-progress 4200ms linear both;
+}
+.toast.error::after { background: color-mix(in srgb, var(--red) 78%, transparent); }
+.toast.ok::after { background: color-mix(in srgb, var(--green) 78%, transparent); }
+@keyframes rm-toast-progress { to { transform: scaleX(0); } }
+html[data-motion="on"] .toast {
+  animation: rm-toast-in 340ms var(--rm-spring) both !important;
+}
+@keyframes rm-toast-in {
+  from { opacity: 0; transform: translateY(12px) scale(.96); }
+  65% { opacity: 1; }
+  to { opacity: 1; transform: none; }
+}
+
+/* ---------- 数字/状态局部反馈 ---------- */
+
+.rm-count-pulse {
+  animation: rm-count-pulse 360ms var(--rm-spring) both;
+}
+@keyframes rm-count-pulse {
+  from { color: var(--accent); transform: translateY(-1px) scale(1.08); }
+  to { transform: none; }
+}
+.rm-state-pop {
+  animation: rm-state-pop 320ms var(--rm-overshoot) both;
+}
+@keyframes rm-state-pop {
+  0% { transform: scale(.94); }
+  62% { transform: scale(1.035); }
+  100% { transform: none; }
+}
+.rm-decision-flash {
+  animation: rm-decision-flash 360ms var(--rm-spring) both;
+}
+@keyframes rm-decision-flash {
+  0% { box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--accent) 48%, transparent); }
+  100% { box-shadow: inset 0 0 0 0 transparent; }
+}
+
+/* ---------- 减少动态 / 关闭动效 ---------- */
+
+html[data-motion="off"] .modal.first-run-modal { animation: none !important; }
+html[data-motion="off"] .tap-ripple { display: none !important; }
+html[data-motion="off"] *,
+html[data-motion="off"] *::before,
+html[data-motion="off"] *::after {
+  animation-duration: 1ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 1ms !important;
+  scroll-behavior: auto !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  html[data-motion-pref="system"] .tap-ripple { display: none !important; }
+  html[data-motion-pref="system"] .modal-scrim { transition: none !important; }
+  html[data-motion-pref="system"] *,
+  html[data-motion-pref="system"] *::before,
+  html[data-motion-pref="system"] *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+
+/* 多选批量操作：从拥挤的工具栏移到下方浮动玻璃条，避免把搜索栏挤成两行 */
+#batch-actions {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  z-index: 45;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: max-content;
+  max-width: calc(100vw - 32px);
+  flex-wrap: nowrap !important;
+  padding: 9px 12px;
+  border: 1px solid color-mix(in srgb, var(--panel-stroke, var(--line)) 88%, transparent);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--surface, #07131f) 90%, transparent);
+  box-shadow: 0 18px 54px rgb(2 12 22 / .24), inset 0 1px 0 rgb(255 255 255 / .18);
+  backdrop-filter: blur(16px) saturate(125%);
+  -webkit-backdrop-filter: blur(16px) saturate(125%);
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+#batch-actions > * { flex: 0 0 auto; }
+#batch-actions:empty { display: none; }
+#batch-actions > .hint { padding: 0 4px; }
+#batch-actions.rm-batch-enter { animation: rm-batch-bar-in 360ms var(--rm-spring) both; }
+@keyframes rm-batch-bar-in {
+  from { opacity: 0; transform: translateX(-50%) translateY(12px) scale(.975); }
+  to { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+}
+#batch-actions.rm-batch-leaving { pointer-events: none !important; }
+@media (max-width: 900px) {
+  #batch-actions { flex-wrap: wrap !important; justify-content: center; bottom: 12px; width: calc(100vw - 24px); max-width: calc(100vw - 24px); }
+}
+
+@media (max-width: 760px) {
+  .rm-net-indicator { top: calc(var(--header-h, 64px) + 6px); right: 10px; }
+}
+
+
+
+/* ---------- 复核页：保留照片 FLIP 的 Q 弹；grid 必须瞬时换版，不能先做 CSS 过渡 ----------
+   中间照片卡片由 animateReviewLayout() 做 FLIP（translate+scale 弹性），
+   若给 .review-body 加 grid-template-columns transition，更新瞬间测到的 to 矩形仍是旧值，
+   FLIP 会失效（Q 弹消失）。这里只让详情面板自身做透明度/位移过渡。 */
+html[data-motion="on"] .review-page #detail.review-detail,
+html[data-motion="on"] .activity-inline-review #detail.review-detail {
+  transition:
+    opacity 200ms var(--rm-exit),
+    transform 420ms var(--rm-spring),
+    border-color 180ms var(--rm-exit) !important;
+}
+html[data-motion="on"] .review-page .review-body.detail-collapsed .review-detail {
+  pointer-events: none;
+}
+
+/* ---------- 关闭动效时首配弹窗必须完全静止 ---------- */
+html[data-motion="off"] .modal.first-run-modal,
+html[data-motion="off"] .first-run-mask {
+  animation: none !important;
+  transition: none !important;
+}
+
+/* ---------- 低性能 / 软件渲染：去掉新增大面积模糊 ---------- */
+html[data-perf="low"] .photo-inspect::before {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+html[data-perf="low"] .modal-scrim,
+html[data-perf="low"] #batch-actions,
+html[data-perf="low"] .rm-net-indicator {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* ---------- OS reduce + 用户明确选择“始终开启”：用户选择优先 ---------- */
+@media (prefers-reduced-motion: reduce) {
+  html[data-motion="on"] .tap-ripple {
+    display: block !important;
+    animation: tap-ripple 460ms cubic-bezier(.22,1,.36,1) forwards !important;
+  }
+  html[data-motion="on"] .agent-panel {
+    transition: transform 520ms var(--rm-spring), opacity 240ms var(--rm-spring), box-shadow 320ms var(--rm-spring) !important;
+    animation: none !important;
+  }
+  html[data-motion="on"] .agent-scrim {
+    transition: opacity 260ms var(--rm-spring) !important;
+    animation: none !important;
+  }
+  html[data-motion="on"] .agent-msg {
+    animation: rm-msg-in 300ms var(--rm-spring) both !important;
+  }
+  html[data-motion="on"] .agent-fab {
+    animation: none !important;
+    transition: transform 220ms var(--rm-spring), box-shadow 220ms var(--rm-spring) !important;
+  }
+}
+
+#toast-root .toast.error { color: #ffb3ad !important; }
+#toast-root .toast.ok { color: #8ff1cf !important; }
+#toast-root .toast.warn { color: #ffd28a !important; }
+
+/* ---------- 照片详情右栏：单一滚动，卡片按内容高度，不再各自内滚 ---------- */
+.photo-inspect .pi-side {
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  grid-template-rows: auto auto !important;
+  align-content: start;
+  padding-bottom: 14px;
+  scrollbar-width: thin;
+  scrollbar-color: rgb(255 255 255 / .30) transparent;
+}
+.photo-inspect .pi-side::-webkit-scrollbar { width: 8px; }
+.photo-inspect .pi-side::-webkit-scrollbar-thumb { background: rgb(255 255 255 / .28); border-radius: 4px; }
+.photo-inspect .pi-card {
+  overflow: visible !important;
+  max-height: none !important;
+}
+
+/* ---------- 更高可读的浅色主题页头 / 小字 ---------- */
+html[data-style="liquid"] .page-head,
+html[data-style="liquid"] .activity-title,
+html[data-style="liquid"] .review-head,
+html[data-style="liquid"] .settings-page .hint,
+html[data-style="liquid"] .settings-page .sub {
+  text-shadow: 0 1px 2px rgb(1 9 16 / .72), 0 0 18px rgb(1 9 16 / .30);
+}
+html[data-style="liquid"] .page-head .sub,
+html[data-style="liquid"] .activity-title .sub {
+  color: rgb(236 249 255 / .94) !important;
+}
+
+/* ---------- 处理中指示器移到左下，避开主操作按钮 ---------- */
+.rm-net-indicator {
+  top: auto !important;
+  right: auto !important;
+  left: 18px !important;
+  bottom: 18px !important;
+  transform-origin: left bottom !important;
+}
+
+/* ---------- 筛选 active：accent 胶囊 + 左侧色条 ---------- */
+html[data-motion="on"] .filter-item.active {
+  background: color-mix(in srgb, var(--accent) 24%, transparent) !important;
+  border-color: color-mix(in srgb, var(--accent) 44%, var(--line)) !important;
+  color: var(--accent-strong) !important;
+  box-shadow: inset 3px 0 0 var(--accent), 0 0 0 1px color-mix(in srgb, var(--accent) 16%, transparent) !important;
+}
+html[data-motion="on"] .filter-item.active .icon,
+html[data-motion="on"] .filter-item.active .filter-count {
+  color: var(--accent) !important;
+}
+
+/* ---------- 批量栏出现时给网格留出底部安全区 ---------- */
+html.rm-has-batch .review-grid-col {
+  padding-bottom: 0 !important;
+  margin-bottom: 84px !important;
+}
+html.rm-has-batch .review-grid-col .photo-grid {
+  padding-bottom: 8px !important;
+}
+
+/* ---------- 更多菜单：更高不透明度的深色玻璃，禁止背后文字穿透 ---------- */
+html[data-style] .more-menu {
+  background: color-mix(in srgb, #07131f 90%, transparent) !important;
+  border-color: rgb(255 255 255 / .16) !important;
+  box-shadow: 0 22px 60px rgb(1 8 14 / .42), inset 0 1px 0 rgb(255 255 255 / .07) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(125%);
+  backdrop-filter: blur(20px) saturate(125%);
+}
+html[data-style] .more-menu button, html[data-style] .more-menu a {
+  color: #eaf7fb !important;
+}
+html[data-style] .more-menu button:disabled {
+  color: rgb(234 247 251 / .48) !important;
+  opacity: 1 !important;
+}
+html[data-style] .more-menu .menu-sep { background: rgb(255 255 255 / .12) !important; }
+
+/* ---------- 窄屏筛选 rail：换行可见，不横向裁切 ---------- */
+@media (max-width: 980px) {
+  .review-page .review-filters {
+    flex-wrap: wrap !important;
+    overflow-x: visible !important;
+    overflow-y: visible !important;
+    row-gap: 6px;
+    padding: 8px !important;
+  }
+  .review-page .review-filters .filter-item {
+    flex: 0 0 auto !important;
+    min-height: 34px !important;
+  }
+}
+
+
+/* ---------- 浅色主题下页头面包屑 / 设置说明的可读性 ---------- */
+html[data-style="liquid"] .crumb {
+  width: fit-content;
+  max-width: 100%;
+  padding: 4px 10px 4px 8px;
+  border-radius: 999px;
+  background: rgb(5 15 24 / .34);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / .07);
+  color: #f1fbff !important;
+  text-shadow: 0 1px 2px rgb(1 8 14 / .65);
+}
+html[data-style="liquid"] .crumb a,
+html[data-style="liquid"] .crumb-sep { color: #f1fbff !important; }
+html[data-style="liquid"] .page-head .sub,
+html[data-style="liquid"] .activity-title .sub {
+  color: #eef9ff !important;
+  text-shadow: 0 1px 3px rgb(1 8 14 / .82), 0 0 14px rgb(1 8 14 / .30);
+}
+html[data-style="liquid"] .settings-jump ~ .section .hint,
+html[data-style="liquid"] .settings-jump ~ .settings-columns .hint,
+html[data-style="liquid"] .settings-jump ~ .section .hint {
+  color: #f0fbff !important;
+  text-shadow: 0 1px 2px rgb(1 8 14 / .72);
+}
+html[data-style="liquid"] .settings-jump ~ .section .hint {
+  width: fit-content;
+  max-width: 100%;
+  padding: 3px 8px;
+  border-radius: 7px;
+  background: rgb(5 15 24 / .26);
+}
+
+/* 右栏单一滚动，留出底部手感空间；不要用 mask 永久裁掉最后一行 */
+.photo-inspect .pi-side { position: relative; padding-bottom: 26px; }
+.photo-inspect .pi-side > * { flex-shrink: 0; }
+
+
+/* 关闭动效时，设置分区跳转也必须是瞬时；style.css 默认给 html 开了 scroll-behavior:smooth */
+html[data-motion="off"] { scroll-behavior: auto !important; }
+html[data-motion="off"] * { scroll-behavior: auto !important; }
+
+
+/* ---------- 页面切换：真实 DOM 磨砂帘幕，不截玻璃快照、不动 #app 的 transform ---------- */
+#rm-page-veil {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: var(--header-h, 64px);
+  bottom: 0;
+  z-index: 30;
+  opacity: 0;
+  pointer-events: none;
+  background: color-mix(in srgb, #07131f 24%, transparent);
+  -webkit-backdrop-filter: blur(10px) saturate(115%);
+  backdrop-filter: blur(10px) saturate(115%);
+  transition: opacity 160ms var(--rm-exit);
+}
+#rm-page-veil.show {
+  opacity: 1;
+  pointer-events: auto;
+}
+html[data-motion="off"] #rm-page-veil { display: none !important; }
+
+
+html[data-perf="low"] #rm-page-veil {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+  background: color-mix(in srgb, #07131f 42%, transparent);
+}
+html[data-motion="off"] #rm-page-veil { display: none !important; }
+#rm-net-indicator:not(.show) i { animation: none !important; }
+
+
+/* ---------- 动效关闭：高特异性组件也不得偷偷动画 ---------- */
+html[data-motion="off"] #agent-panel,
+html[data-motion="off"] .agent-panel,
+html[data-motion="off"] .agent-scrim,
+html[data-motion="off"] .agent-msg,
+html[data-motion="off"] .agent-fab,
+html[data-motion="off"] .agent-results {
+  transition: none !important;
+  animation: none !important;
+}
+html[data-motion="off"] #photo-inspect,
+html[data-motion="off"] #photo-inspect *,
+html[data-motion="off"] .overlay,
+html[data-motion="off"] .overlay * {
+  transition: none !important;
+  animation: none !important;
+}
+html[data-motion="off"] #app .roll,
+html[data-motion="off"] #app .frame,
+html[data-motion="off"] #app .filter-item,
+html[data-motion="off"] #app .review-body,
+html[data-motion="off"] #app .review-detail {
+  transition: none !important;
+  animation: none !important;
+}
+
+/* 软件渲染下页面帘幕退化为纯色遮罩，不做全屏模糊 */
+html[data-gpu="software"] #rm-page-veil,
+html[data-perf="low"] #rm-page-veil {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+  background: color-mix(in srgb, #07131f 42%, transparent);
+}
+
+/* Agent 面板用明确的 480ms 收放，不被旧 agent.css 的 220ms 规则缩短 */
+html[data-motion="on"] #agent-root .agent-panel {
+  transition:
+    transform 480ms var(--rm-spring),
+    opacity 240ms var(--rm-spring),
+    box-shadow 320ms var(--rm-spring) !important;
+}
+
+
+/* 关闭动效时对应用内所有子元素兜底，覆盖任何组件的 !important 过渡 */
+html[data-motion="off"] #app *,
+html[data-motion="off"] #app *::before,
+html[data-motion="off"] #app *::after,
+html[data-motion="off"] #agent-root *,
+html[data-motion="off"] #agent-root *::before,
+html[data-motion="off"] #agent-root *::after,
+html[data-motion="off"] .modal-mask *,
+html[data-motion="off"] .modal-mask *::before,
+html[data-motion="off"] .modal-mask *::after,
+html[data-motion="off"] .photo-inspect *,
+html[data-motion="off"] .photo-inspect *::before,
+html[data-motion="off"] .photo-inspect *::after,
+html[data-motion="off"] .overlay *,
+html[data-motion="off"] .overlay *::before,
+html[data-motion="off"] .overlay *::after,
+html[data-motion="off"] #toast-root *,
+html[data-motion="off"] #batch-actions * {
+  transition: none !important;
+  animation: none !important;
+}
+
+
+html[data-motion="off"] #photo-grid .frame.review-reveal,
+html[data-motion="off"] #photo-grid .frame.review-reveal.reveal-visible {
+  transition: none !important;
+  animation: none !important;
+}
+
+
+/* 页头副标题也给一个极轻的玻璃胶囊，避免 12px 白字直接落在亮沙滩上 */
+html[data-style="liquid"] .page-head .sub,
+html[data-style="liquid"] .activity-title .sub {
+  width: fit-content;
+  max-width: 100%;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: rgb(5 15 24 / .30);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / .06);
+}
+
+
+/* 照片详情右栏的滚动提示（滚动到底自动隐去） */
+.pi-body { position: relative; }
+.pi-scroll-cue {
+  position: absolute;
+  right: 22px;
+  bottom: 9px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: rgb(220 246 255 / .88);
+  color: #06202e;
+  font-size: 11px;
+  letter-spacing: .04em;
+  pointer-events: none;
+  box-shadow: 0 4px 14px rgb(1 8 14 / .22);
+  transition: opacity 180ms ease, transform 180ms ease;
+  z-index: 2;
+}
+.pi-scroll-cue.is-hidden { opacity: 0; transform: translateY(5px); }
+
+html[data-perf="low"] .agent-panel,
+html[data-perf="low"] .more-menu,
+html[data-perf="low"] .modal {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+
+
+html[data-motion="off"] .first-run-mask {
+  background: rgb(10 20 14 / .36) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+
+/* 软件渲染：所有本轮新增的大面积模糊都退化为纯色层 */
+html[data-gpu="software"] .photo-inspect::before,
+html[data-gpu="software"] #batch-actions,
+html[data-gpu="software"] .rm-net-indicator,
+html[data-gpu="software"] #rm-page-veil,
+html[data-gpu="software"] .modal,
+html[data-gpu="software"] .modal-scrim,
+html[data-gpu="software"] .more-menu,
+html[data-gpu="software"] .toast,
+html[data-gpu="software"] .agent-panel,
+html[data-gpu="software"] .more-menu {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+html[data-gpu="software"] #rm-page-veil {
+  background: color-mix(in srgb, #07131f 42%, transparent);
+}
+
+
+/* ---------- 批量主操作区：深玻璃 + 高对比文字（浅色主题可读） ---------- */
+html[data-style] #batch-actions {
+  background:
+    linear-gradient(150deg, rgb(255 255 255 / .16), rgb(255 255 255 / .035) 58%, rgb(8 26 38 / .08)),
+    color-mix(in srgb, #07131f 18%, transparent) !important;
+  border-color: rgb(255 255 255 / .26) !important;
+  color: #f2fbff !important;
+  box-shadow: 0 18px 52px rgb(1 8 14 / .24), inset 0 1px 0 rgb(255 255 255 / .18) !important;
+  -webkit-backdrop-filter: blur(26px) saturate(145%);
+  backdrop-filter: blur(26px) saturate(145%);
+}
+html[data-style] #batch-actions > .hint {
+  color: #d7eef9 !important;
+}
+html[data-style] #batch-actions .small {
+  background: rgb(255 255 255 / .10) !important;
+  border-color: rgb(255 255 255 / .18) !important;
+  color: #eef8fc !important;
+}
+html[data-style] #batch-actions .small:hover {
+  background: rgb(255 255 255 / .17) !important;
+  border-color: rgb(255 255 255 / .28) !important;
+}
+html[data-style] #batch-actions .small.danger {
+  color: #ffb3ad !important;
+  border-color: rgb(255 179 173 / .28) !important;
+}
+
+/* ---------- 活动概览：打开更多菜单时把 hero 抬到步骤条上方 ---------- */
+.activity-hero.more-open {
+  position: relative !important;
+  z-index: 35 !important;
+  overflow: visible !important;
+}
+.activity-hero.more-open .more-wrap { position: relative; z-index: 36; }
+
+/* ---------- 步骤条：白点内的图标使用深色，不再同色不可见 ---------- */
+html[data-style] .stage-dot {
+  color: #0b1f2e !important;
+}
+html[data-style] .stage-dot svg { stroke: currentColor !important; }
+html[data-style] .stage-dot.current {
+  color: #f4fbff !important;
+}
+
+/* ---------- 浅色壁纸上的主 CTA 与顶栏小字 ---------- */
+html[data-style="liquid"] .page-head .actions .primary {
+  background: color-mix(in srgb, #07131f 84%, transparent) !important;
+  color: #f4fbff !important;
+  border-color: rgb(255 255 255 / .22) !important;
+  box-shadow: 0 10px 26px rgb(2 10 18 / .30), inset 0 1px 0 rgb(255 255 255 / .10) !important;
+}
+html[data-style="liquid"] .page-head .actions .primary:hover {
+  background: color-mix(in srgb, #07131f 92%, transparent) !important;
+}
+html[data-style="liquid"] .version,
+html[data-style="liquid"] .topbar-end .icon-link {
+  color: #eef9ff !important;
+  text-shadow: 0 1px 2px rgb(1 8 14 / .70);
+}
+
+/* ---------- 设置吸顶导航与顶栏之间的缝隙：用同一块玻璃背板盖住 ---------- */
+.settings-jump::before {
+  content: "";
+  position: absolute;
+  left: -7px;
+  right: -7px;
+  top: -13px;
+  height: 13px;
+  border: 1px solid var(--line);
+  border-bottom: 0;
+  border-radius: 14px 14px 0 0;
+  background: color-mix(in srgb, var(--surface) 94%, transparent);
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+  z-index: -1;
+  pointer-events: none;
+}
+
+/* ---------- 窄屏：详情抽屉化，保证网格至少完整一行卡片 ---------- */
+@media (max-width: 980px) {
+  .review-page .review-body {
+    position: relative;
+    grid-template-rows: auto minmax(0, 1fr) !important;
+  }
+  .review-page .review-detail {
+    position: absolute !important;
+    left: 8px;
+    right: 8px;
+    bottom: 8px;
+    max-height: 34vh;
+    z-index: 7;
+    border-radius: 14px;
+    box-shadow: 0 18px 50px rgb(1 8 14 / .35);
+  }
+  .review-page .review-detail:has(.detail-empty) { display: none !important; }
+}
+
+
+/* 主 CTA 用 ID 提高优先级，压过液态玻璃的通用 button !important 背景 */
+
+/* 步骤条圆点里的图标：与圆点底色真正拉开 */
+html[data-style] .stage-dot .icon,
+html[data-style] .stage-dot svg {
+  color: #0b1f2e !important;
+  stroke: currentColor !important;
+}
+html[data-style] .stage-dot.current .icon,
+html[data-style] .stage-dot.current svg {
+  color: #f4fbff !important;
+  stroke: currentColor !important;
+}
+
+/* 设置吸顶导航上方缝隙用实色玻璃条填满，避免滚动内容从 10px 缝里透出 */
+.settings-jump::before {
+  background: color-mix(in srgb, var(--surface) 98%, transparent) !important;
+}
+
+
+/* 1000px 以下照片详情：照片保留一整行，右栏限制高度并滚动，不能把照片挤成 2px */
+@media (max-width: 1000px) {
+  .photo-inspect .pi-body {
+    grid-template-columns: 1fr !important;
+    grid-template-rows: minmax(0, 1fr) minmax(0, 38vh) !important;
+  }
+  .photo-inspect .pi-image {
+    min-height: 220px;
+  }
+  .photo-inspect .pi-side {
+    max-height: 38vh !important;
+    overflow-y: auto !important;
+  }
+  .photo-inspect .pi-image img {
+    max-height: 46vh;
+  }
+}
+
+
+/* 设置吸顶导航顶态：深玻璃背板，禁止白条 */
+html[data-style="liquid"] .settings-jump::before {
+  background: color-mix(in srgb, #0a1018 42%, transparent) !important;
+  border-color: rgb(255 255 255 / .14) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  backdrop-filter: blur(16px) !important;
+}
+
+/* 筛选 active：浅底改深字，保证 4.5:1；折叠轨图标同步 */
+html[data-motion="on"] .filter-item.active {
+  color: #06202e !important;
+}
+html[data-motion="on"] .filter-item.active .icon,
+html[data-motion="on"] .filter-item.active .filter-count {
+  color: #06202e !important;
+}
+html[data-motion="on"] .filter-item.active:hover {
+  color: #041a26 !important;
+}
+
+/* 设置 tab active：深色 puck + 白字，与吸顶态统一 */
+html[data-style="liquid"] .rm-jump-indicator {
+  background: color-mix(in srgb, #07131f 72%, transparent) !important;
+  border-color: rgb(255 255 255 / .22) !important;
+  box-shadow: 0 4px 14px rgb(1 8 14 / .28), inset 0 1px 0 rgb(255 255 255 / .10) !important;
+}
+html[data-style="liquid"] #settings-jump button.active {
+  color: #f4fbff !important;
+}
+
+/* 900 以下复核详情抽屉：小图 + 首屏可见标题/操作 + 内部滚动 */
+@media (max-width: 980px) {
+  html[data-style="liquid"] .review-page .review-detail {
+    max-height: 40vh !important;
+    padding: 10px !important;
+    overflow-y: auto !important;
+    background: color-mix(in srgb, #07131f 78%, transparent) !important;
+    border-color: rgb(255 255 255 / .16) !important;
+    box-shadow: 0 20px 50px rgb(1 8 14 / .42) !important;
+  }
+  .review-page .review-detail .detail-image {
+    height: 130px !important;
+    max-height: 130px !important;
+    object-fit: contain;
+    flex: 0 0 auto;
+  }
+  .review-page .review-detail .detail-title {
+    margin: 8px 0 3px !important;
+    font-size: 15px !important;
+  }
+  .review-page .review-detail .detail-info {
+    font-size: 10.5px !important;
+    line-height: 1.45 !important;
+  }
+}
+
+
+/* 弹窗玻璃：先有高对比深玻璃底，避免液态主题的渐变覆盖导致表面过透/大块柔光 */
+html[data-style="liquid"] .modal {
+  background: color-mix(in srgb, #07131f 82%, transparent) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(120%) !important;
+  backdrop-filter: blur(18px) saturate(120%) !important;
+}
+
+/* 照片详情滚动提示移到顶部，不再覆盖右栏最后一行文字 */
+.photo-inspect .pi-scroll-cue {
+  position: static !important;
+  right: auto !important;
+  bottom: auto !important;
+  margin-left: auto;
+  margin-right: 10px;
+  padding: 3px 9px;
+  font-size: 10.5px;
+  background: rgb(220 246 255 / .88);
+  color: #06202e;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+/* 吸顶导航背板用接近实色的深玻璃，完全盖住上方缝隙 */
+html[data-style="liquid"] .settings-jump::before {
+  background: color-mix(in srgb, #07131f 92%, transparent) !important;
+}
+
+
+/* 用户反馈收口：设置页不加大黑边、不给文字/按钮铺黑底 */
+html[data-style] .settings-jump::before { display: none !important; }
+html[data-style] .settings-jump { top: var(--header-h) !important; }
+html[data-style] #settings-jump button {
+  background: transparent !important;
+  box-shadow: none !important;
+  border-color: transparent !important;
+}
+html[data-style] #settings-jump button:hover {
+  background: rgb(255 255 255 / .10) !important;
+}
+html[data-style] #settings-jump .rm-jump-indicator {
+  background: color-mix(in srgb, var(--accent) 20%, transparent) !important;
+  border-color: color-mix(in srgb, var(--accent) 32%, transparent) !important;
+  box-shadow: 0 4px 14px rgb(1 8 14 / .16) !important;
+}
+html[data-style] #settings-jump button.active {
+  color: var(--ink) !important;
+}
+html[data-style="liquid"] .settings-jump ~ .section .hint,
+html[data-style="liquid"] .settings-jump ~ .settings-columns .hint {
+  background: transparent !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+html[data-style="liquid"] .page-head .sub,
+html[data-style="liquid"] .activity-title .sub,
+html[data-style="liquid"] .crumb {
+  background: transparent !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+html[data-style="liquid"] .settings-jump ~ .section .hint {
+  color: var(--ink-2) !important;
+  text-shadow: 0 1px 2px rgb(255 255 255 / .45);
+}
+
+/* 主 CTA 不用黑色底，恢复品牌色；弹窗底部“创建项目”同理 */
+html[data-style="liquid"] .modal .primary,
+html[data-style="liquid"] .modal .m-foot .primary {
+  background: var(--accent) !important;
+  color: var(--accent-ink) !important;
+  border-color: transparent !important;
+}
+
+
+/* 弹窗主按钮：用品牌蓝，不铺黑色底 */
+html[data-style="liquid"] #modal-root .modal .m-foot .primary,
+html[data-style="liquid"] #modal-root .modal button.primary {
+  background: var(--accent) !important;
+  color: var(--accent-ink) !important;
+  border-color: transparent !important;
+}
+
+
+/* 设置页普通按钮/分段选项不要再铺黑底，改成轻玻璃；选中态保留品牌色 */
+html[data-style="liquid"] .settings-jump ~ .section :is(.choice, .segmented button, button.small, .settings-control button, .settings-color),
+html[data-style="liquid"] .settings-jump ~ .settings-columns :is(.choice, .segmented button, button.small) {
+  background: rgb(255 255 255 / .10) !important;
+  color: #f1fbff !important;
+  border-color: rgb(255 255 255 / .18) !important;
+  box-shadow: none !important;
+}
+html[data-style="liquid"] .settings-jump ~ .section .choice.active,
+html[data-style="liquid"] .settings-jump ~ .settings-columns .choice.active {
+  background: color-mix(in srgb, var(--accent) 32%, transparent) !important;
+  color: #f4fbff !important;
+  border-color: color-mix(in srgb, var(--accent) 50%, transparent) !important;
+}
+html[data-style="liquid"] .settings-jump ~ .section #btn-reset-prefs,
+html[data-style="liquid"] .settings-jump ~ .section #btn-glass-reset {
+  background: rgb(255 255 255 / .08) !important;
+  color: #f1fbff !important;
+  border-color: rgb(255 255 255 / .18) !important;
+}
+
+
+/* “新建活动”：透明玻璃，不再用深色底 */
+html[data-style="liquid"] #btn-create {
+  background: rgb(255 255 255 / .10) !important;
+  color: #f4fbff !important;
+  border-color: rgb(255 255 255 / .30) !important;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / .14), 0 8px 24px rgb(2 10 18 / .14) !important;
+  -webkit-backdrop-filter: blur(12px) saturate(120%);
+  backdrop-filter: blur(12px) saturate(120%);
+}
+html[data-style="liquid"] #btn-create:hover {
+  background: rgb(255 255 255 / .16) !important;
+  border-color: rgb(255 255 255 / .40) !important;
+}
+
+
+/* 透明玻璃按钮仍要可读：只加投影，不加深色底 */
+html[data-style="liquid"] #btn-create {
+  text-shadow: 0 1px 3px rgb(1 8 14 / .60);
+}
+html[data-style="liquid"] #btn-create .icon {
+  filter: drop-shadow(0 1px 2px rgb(1 8 14 / .55));
+}
+
+
+/* 关闭确认：液态玻璃，替代浏览器原生 confirm */
+.rm-confirm-mask {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  opacity: 0;
+  transition: opacity 180ms ease;
+}
+.rm-confirm-mask.open { opacity: 1; }
+.rm-confirm-scrim {
+  position: absolute;
+  inset: 0;
+  background: rgb(3 10 16 / .42);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+}
+.rm-confirm-card {
+  position: relative;
+  width: min(430px, 100%);
+  padding: 24px;
+  border-radius: 24px;
+  color: #f3fbff;
+  background:
+    linear-gradient(150deg, rgb(255 255 255 / .16), rgb(255 255 255 / .04) 45%, rgb(12 37 52 / .22)),
+    color-mix(in srgb, #07131f 72%, transparent);
+  border: 1px solid rgb(255 255 255 / .26);
+  box-shadow: 0 28px 70px rgb(1 8 14 / .48), inset 0 1px 0 rgb(255 255 255 / .18);
+  -webkit-backdrop-filter: blur(26px) saturate(140%);
+  backdrop-filter: blur(26px) saturate(140%);
+  transform: translateY(14px) scale(.965);
+  transition: transform 260ms cubic-bezier(.2,.85,.25,1.12), opacity 180ms ease;
+}
+.rm-confirm-mask.open .rm-confirm-card { transform: translateY(0) scale(1); }
+.rm-confirm-kicker {
+  font-size: 11px;
+  letter-spacing: .10em;
+  color: rgb(220 242 255 / .62);
+  text-transform: uppercase;
+}
+.rm-confirm-card h3 {
+  margin: 8px 0 8px;
+  font-family: var(--font-display);
+  font-size: 21px;
+  font-weight: 600;
+  letter-spacing: -.02em;
+}
+.rm-confirm-card p {
+  margin: 0;
+  color: rgb(225 244 255 / .78);
+  font-size: 13px;
+  line-height: 1.7;
+}
+.rm-confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 22px;
+}
+.rm-confirm-actions button {
+  height: 38px;
+  padding: 0 16px;
+  border-radius: 999px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: transform 140ms ease, background 140ms ease, border-color 140ms ease;
+}
+.rm-confirm-actions button:active { transform: scale(.97); }
+.rm-confirm-cancel {
+  color: #f1fbff;
+  background: rgb(255 255 255 / .10);
+  border: 1px solid rgb(255 255 255 / .22);
+}
+.rm-confirm-cancel:hover { background: rgb(255 255 255 / .16); }
+.rm-confirm-ok {
+  color: #061d2b;
+  background: linear-gradient(180deg, #d8f4ff, #b9e6fb);
+  border: 1px solid rgb(255 255 255 / .54);
+  box-shadow: 0 8px 22px rgb(6 30 45 / .24);
+  font-weight: 600;
+}
+.rm-confirm-ok:hover { filter: brightness(1.03); }
+
+
+/* 后台导入进度：液态玻璃悬浮条 */
+.rm-import-progress {
+  position: fixed;
+  left: 50%;
+  bottom: 22px;
+  z-index: 95;
+  width: min(420px, calc(100vw - 32px));
+  padding: 14px 16px 13px;
+  border-radius: 18px;
+  color: #f3fbff;
+  background:
+    linear-gradient(150deg, rgb(255 255 255 / .16), rgb(255 255 255 / .04) 55%, rgb(8 26 38 / .30)),
+    color-mix(in srgb, #07131f 74%, transparent);
+  border: 1px solid rgb(255 255 255 / .24);
+  box-shadow: 0 20px 48px rgb(1 8 14 / .42), inset 0 1px 0 rgb(255 255 255 / .16);
+  -webkit-backdrop-filter: blur(24px) saturate(140%);
+  backdrop-filter: blur(24px) saturate(140%);
+  transform: translate(-50%, 16px) scale(.97);
+  opacity: 0;
+  pointer-events: none;
+  transition: transform 260ms cubic-bezier(.2,.85,.25,1.12), opacity 200ms ease;
+}
+.rm-import-progress.open { opacity: 1; transform: translate(-50%, 0) scale(1); }
+.rm-import-progress.leaving { opacity: 0; transform: translate(-50%, 10px) scale(.98); }
+.rm-import-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 12px;
+  color: rgb(229 246 255 / .82);
+}
+.rm-import-head b { font-family: var(--font-display); font-size: 16px; color: #f5fcff; }
+.rm-import-track {
+  height: 5px;
+  margin-top: 9px;
+  border-radius: 999px;
+  background: rgb(255 255 255 / .14);
+  overflow: hidden;
+}
+.rm-import-track i {
+  display: block;
+  height: 100%;
+  width: 2%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #9fdcf4, #e0f7ff);
+  box-shadow: 0 0 12px rgb(166 229 255 / .6);
+  transition: width 320ms ease;
+}
+.rm-import-progress p {
+  margin: 8px 0 0;
+  font-size: 11px;
+  color: rgb(210 237 249 / .66);
+  line-height: 1.4;
+}
+.rm-import-progress[data-state="error"] {
+  border-color: rgb(255 150 150 / .45);
+}
+.rm-import-progress[data-state="error"] .rm-import-track i {
+  background: linear-gradient(90deg, #ff9b9b, #ffd2c7);
+  box-shadow: 0 0 12px rgb(255 150 150 / .4);
+}
+.rm-import-progress[data-state="error"] p { color: #ffc6c6; }
+
+
+.rm-import-progress[data-state="scanning"] .rm-import-track i {
+  width: 38% !important;
+  animation: rm-import-scan 1.15s ease-in-out infinite;
+}
+@keyframes rm-import-scan {
+  0% { transform: translateX(-110%); }
+  50% { transform: translateX(130%); }
+  100% { transform: translateX(270%); }
+}
+
+
+/* 照片详情：保留液态玻璃，不要整屏黑幕 */
+html[data-style="liquid"] .photo-inspect::before {
+  background:
+    radial-gradient(120% 150% at 8% 0%, rgb(255 255 255 / .20), transparent 56%),
+    linear-gradient(135deg, rgb(6 24 40 / .18), rgb(6 24 40 / .06)) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(140%) !important;
+  backdrop-filter: blur(18px) saturate(140%) !important;
+}
+html[data-style="liquid"] .photo-inspect {
+  background:
+    radial-gradient(120% 150% at 10% 0%, rgb(255 255 255 / .12), transparent 55%),
+    linear-gradient(135deg, rgb(7 27 45 / .12), rgb(7 27 45 / .04)) !important;
+}
+
+
+/* 文件夹选择：新建文件夹行 */
+.folder-new-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 10px;
+}
+.folder-new-row[hidden] { display: none !important; }
+.folder-new-row input {
+  flex: 1;
+  min-width: 0;
+  height: 34px;
+}
+.folder-new-row button { flex: none; }
+
+/* Direct manipulation follows the pointer; keep the existing eased zoom for
+   wheel/double-click and all settled colors, glass and layout unchanged. */
+.photo-inspect.is-panning .pi-image img {
+  transition: none !important;
+}
+/* The shared menu animation already handles entry and interruption. */
+html[data-style] .photo-context-menu { animation: none !important; }

@@ -1,0 +1,102 @@
+/* Wallpaper-only extension and transparent blue glass. Existing layout and GPU detection stay in themes.css. */
+html[data-style="standard"] {
+  --wallpaper: url('/static/materials/wallpapers-20261021/minimal-mist.webp?v=20261021-blue2');
+  --wallpaper-shade: linear-gradient(transparent, transparent);
+}
+html[data-theme="dark"][data-style="standard"] {
+  --wallpaper-shade: linear-gradient(#111315e8, #111315e8);
+}
+
+html[data-style="liquid"] {
+  --wallpaper: url('/static/materials/wallpapers-20261021/liquid-ocean-waves.webp?v=20261021-waves2');
+  --wallpaper-shade: linear-gradient(transparent, transparent);
+  --canvas: #0d1722;
+  --ink: #f3f9ff; --ink-2: #e5f2ff; --muted: #d6eaff; --faint: #cadff5;
+  --accent: #d0edff; --accent-strong: #f2faff; --accent-soft: #a4d9ff24; --accent-ink: #10243c;
+  --green: #b5ead8; --green-soft: #164b407a;
+  --red: #ffb9c1; --red-soft: #6224337a; --orange: #f6d6a1; --orange-soft: #533d237a;
+  --line: rgb(255 255 255 / .15); --line-strong: rgb(255 255 255 / .28);
+  --surface-2: rgb(255 255 255 / .04); --surface-3: rgb(255 255 255 / .07);
+  --panel-background: linear-gradient(135deg, rgb(10 15 22 / .18), rgb(6 10 16 / .08) 62%, rgb(14 20 28 / .14));
+  --panel-stroke: rgb(255 255 255 / .20);
+  --panel-backdrop: blur(1.5px) saturate(110%);
+  --panel-shadow: inset 0 1px 0 rgb(255 255 255 / .18), inset 1px 0 0 rgb(255 255 255 / .06), inset 0 -1px 0 rgb(0 0 0 / .22), 0 5px 18px rgb(0 0 0 / .10);
+  --tile-background: rgb(255 255 255 / .035);
+  --tile-shadow: inset 0 1px 0 rgb(255 255 255 / .11);
+  --control-background: linear-gradient(165deg, rgb(255 255 255 / .18), rgb(255 255 255 / .05) 55%, rgb(255 255 255 / .11));
+  --control-stroke: rgb(255 255 255 / .20);
+  --control-shadow: inset 0 1px 0 rgb(255 255 255 / .16), inset 0 -1px 0 rgb(0 0 0 / .16), 0 3px 7px rgb(0 0 0 / .10);
+  --control-hover-shadow: inset 0 1px 0 rgb(255 255 255 / .22), inset 0 -1px 0 rgb(0 0 0 / .16), 0 5px 12px rgb(0 0 0 / .14);
+  --control-press-shadow: inset 0 2px 4px rgb(0 0 0 / .20), inset 0 -1px 0 rgb(255 255 255 / .10);
+  --field-background: rgb(255 255 255 / .05);
+  --field-shadow: inset 0 1px 2px rgb(0 0 0 / .14);
+  --selected-background: rgb(255 255 255 / .11);
+  --floating-background: rgb(12 18 26 / .94);
+  --floating-shadow: inset 0 1px 0 rgb(255 255 255 / .18), 0 16px 44px rgb(0 0 0 / .30);
+}
+html[data-theme="dark"][data-style="liquid"] {
+  --wallpaper-shade: linear-gradient(#0311241f, #0311241f);
+  --canvas: #0a121b;
+  --ink: #f0f7ff; --ink-2: #e1efff; --muted: #d1e5fb; --faint: #c5dcf5;
+  --accent: #c5e6ff; --accent-strong: #eff8ff; --accent-soft: #88c7ff29;
+  --line: rgb(255 255 255 / .14); --line-strong: rgb(255 255 255 / .26);
+  --surface-2: rgb(255 255 255 / .04); --surface-3: rgb(255 255 255 / .07);
+  --panel-background: linear-gradient(135deg, rgb(8 13 20 / .40), rgb(5 9 15 / .26) 58%, rgb(12 18 27 / .36));
+  --panel-stroke: rgb(255 255 255 / .17);
+  --panel-backdrop: blur(2px) saturate(110%);
+  --panel-shadow: inset 0 1px 0 rgb(255 255 255 / .15), inset 1px 0 0 rgb(255 255 255 / .05), inset 0 -1px 0 rgb(0 0 0 / .24), 0 6px 22px rgb(0 0 0 / .14);
+  --tile-background: rgb(255 255 255 / .035);
+  --tile-shadow: inset 0 1px 0 rgb(255 255 255 / .10);
+  --field-background: rgb(255 255 255 / .04);
+  --field-shadow: inset 0 1px 2px rgb(0 0 0 / .18);
+  --selected-background: rgb(255 255 255 / .10);
+  --floating-background: rgb(10 16 24 / .94);
+  --floating-shadow: inset 0 1px 0 rgb(255 255 255 / .14), 0 16px 44px rgb(0 0 0 / .38);
+}
+
+/* A static wallpaper remains inexpensive even when real-time effects are reduced. */
+html[data-style] body {
+  background-color: var(--canvas);
+  background-image: var(--wallpaper-shade), var(--wallpaper);
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+}
+html[data-style] body::before { background: none; filter: none; }
+
+html[data-style="liquid"] .page-head { color: #f4f9ff; }
+html[data-style="liquid"] .page-head .sub { color: #daeaff; }
+/* One mild blur per working pane, never per photograph. Software/low-FPS paths retain their no-blur fallback. */
+html[data-style="liquid"]:not([data-gpu="software"]):not([data-perf="low"]) :is(.review-grid-col,.review-detail,.review-filters) {
+  backdrop-filter: var(--panel-backdrop) !important;
+  -webkit-backdrop-filter: var(--panel-backdrop) !important;
+}
+html[data-style="liquid"] :is(.style-card,.stat-row,.stepper,.frame,.ai-rule,.ai-summary-item,.filter-item) {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+html[data-style="liquid"] .style-card { background: #ffffff08; }
+html[data-style="liquid"] .choice.active { background: #87c6ff24; box-shadow: inset 0 1px 0 #e6f3ff4d, 0 1px 3px #04162c24; }
+html[data-theme="dark"][data-style="liquid"] .choice.active { background: #b4dbff26; box-shadow: inset 0 1px 0 #e6f3ff4d, 0 1px 3px #04162c24; }
+html[data-style="liquid"] button[data-liquid-glass="1"]::before {
+  background: radial-gradient(ellipse at var(--light-x,35%) var(--light-y,0%), #ffffff24, transparent 62%) !important;
+  opacity: .48 !important;
+  backdrop-filter: var(--liquid-lens, blur(2px)) saturate(108%);
+  -webkit-backdrop-filter: var(--liquid-lens, blur(2px)) saturate(108%);
+}
+html[data-style="liquid"] :is(input:not([type="checkbox"]),select,textarea) { backdrop-filter: none; -webkit-backdrop-filter: none; }
+html[data-gpu="software"][data-style="liquid"] button::before,
+html[data-perf="low"][data-style="liquid"] button::before { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
+html[data-gpu="software"][data-style="liquid"],
+html[data-perf="low"][data-style="liquid"] { --panel-backdrop: none; }
+
+.style-preview-standard { background: url('/static/materials/wallpapers-20261021/minimal-mist.webp?v=20261021-blue2') center / cover; }
+.style-preview-liquid { background: url('/static/materials/wallpapers-20261021/liquid-ocean-waves.webp?v=20261021-waves2') center / cover; }
+.style-preview-liquid :is(.sp-top,.sp-side,.sp-tile) { background: #b8e3ff1c; border-color: #e4f3ff63; box-shadow: inset 0 1px 0 #f1f9ff75; backdrop-filter: blur(2px); }
+
+@supports not (backdrop-filter: blur(1px)) {
+  html[data-style="liquid"] { --panel-background: #153d58eb; }
+  html[data-theme="dark"][data-style="liquid"] { --panel-background: #122d4aeb; }
+}
+

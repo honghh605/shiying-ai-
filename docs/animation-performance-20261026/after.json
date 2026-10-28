@@ -1,0 +1,401 @@
+{
+  "label": "after",
+  "environment": "Edge headless, 1440x900; synthetic comparison, not desktop FPS",
+  "scenarios": {
+    "settings-entry": {
+      "counts": {
+        "rect": 45,
+        "computed": 10,
+        "queries": 3
+      },
+      "metrics": {
+        "LayoutCount": 25,
+        "RecalcStyleCount": 105,
+        "LayoutDuration": 0.04974,
+        "RecalcStyleDuration": 0.05783,
+        "TaskDuration": 0.19966
+      },
+      "frameP95Ms": 5.7
+    },
+    "density-switch": {
+      "counts": {
+        "rect": 3,
+        "computed": 2,
+        "queries": 1
+      },
+      "metrics": {
+        "LayoutCount": 5,
+        "RecalcStyleCount": 78,
+        "LayoutDuration": 0.00057,
+        "RecalcStyleDuration": 0.01175,
+        "TaskDuration": 0.07869
+      },
+      "frameP95Ms": 5.6
+    },
+    "range-drag": {
+      "counts": {
+        "rect": 0,
+        "computed": 0,
+        "queries": 0
+      },
+      "metrics": {
+        "LayoutCount": 46,
+        "RecalcStyleCount": 230,
+        "LayoutDuration": 0.00647,
+        "RecalcStyleDuration": 0.3403,
+        "TaskDuration": 0.5729
+      },
+      "frameP95Ms": 5.7
+    },
+    "settings-scroll": {
+      "counts": {
+        "rect": 324,
+        "computed": 34,
+        "queries": 0
+      },
+      "metrics": {
+        "LayoutCount": 137,
+        "RecalcStyleCount": 255,
+        "LayoutDuration": 0.01406,
+        "RecalcStyleDuration": 0.04361,
+        "TaskDuration": 0.19865
+      },
+      "frameP95Ms": 5.6
+    }
+  },
+  "settingsAppearance": [
+    {
+      "cls": "settings-jump wave-card in-view has-rm-indicator",
+      "text": "外观\n      液态玻璃\n      壁纸\n      快捷键\n  ",
+      "rect": [
+        43.1875,
+        168.171875,
+        1353.625,
+        48
+      ],
+      "background": "color(srgb 0.0392157 0.0627451 0.0941176 / 0.41) none repeat scroll 0% 0% / auto padding-box border-box",
+      "border": "1px solid rgba(255, 255, 255, 0.16)",
+      "shadow": "rgba(255, 255, 255, 0.18) 0px 1px 0px 0px inset, rgba(255, 255, 255, 0.06) 1px 0px 0px 0px inset, rgba(0, 0, 0, 0.22) 0px -1px 0px 0px inset, rgba(0, 0, 0, 0.1) 0px 5px 18px 0px",
+      "blur": "blur(12px) saturate(1.1)",
+      "color": "rgb(243, 249, 255)"
+    },
+    {
+      "cls": "section appearance-section settings-section",
+      "text": "外观与风格\n        两种材质，两种手感。选择后即时应用，自动记",
+      "rect": [
+        43.1875,
+        236.171875,
+        1353.625,
+        571.359375
+      ],
+      "background": "color(srgb 0.0392157 0.0627451 0.0941176 / 0.41) none repeat scroll 0% 0% / auto padding-box border-box",
+      "border": "1px solid rgba(255, 255, 255, 0.18)",
+      "shadow": "rgba(255, 255, 255, 0.14) 0px 1px 0px 0px inset, rgba(0, 8, 18, 0.18) 0px 14px 32px 0px",
+      "blur": "blur(12px) saturate(1.1)",
+      "color": "rgb(243, 249, 255)"
+    },
+    {
+      "cls": "choice ",
+      "text": "跟随系统",
+      "rect": [
+        73.1875,
+        572.359375,
+        157.140625,
+        30
+      ],
+      "background": "rgba(255, 255, 255, 0.1) none repeat scroll 0% 0% / auto padding-box border-box",
+      "border": "0px none rgba(255, 255, 255, 0.18)",
+      "shadow": "none",
+      "blur": "none",
+      "color": "rgb(241, 251, 255)"
+    },
+    {
+      "cls": "choice active",
+      "text": "始终开启",
+      "rect": [
+        233.328125,
+        572.359375,
+        157.15625,
+        30
+      ],
+      "background": "color(srgb 0.815686 0.929412 1 / 0.32) none repeat scroll 0% 0% / auto padding-box border-box",
+      "border": "0px none color(srgb 0.815686 0.929412 1 / 0.5)",
+      "shadow": "none",
+      "blur": "none",
+      "color": "rgb(244, 251, 255)"
+    },
+    {
+      "cls": "choice ",
+      "text": "关闭",
+      "rect": [
+        393.484375,
+        572.359375,
+        157.15625,
+        30
+      ],
+      "background": "rgba(255, 255, 255, 0.1) none repeat scroll 0% 0% / auto padding-box border-box",
+      "border": "0px none rgba(255, 255, 255, 0.18)",
+      "shadow": "none",
+      "blur": "none",
+      "color": "rgb(241, 251, 255)"
+    },
+    {
+      "cls": "choice",
+      "text": "标准",
+      "rect": [
+        576.640625,
+        572.359375,
+        135.953125,
+        30
+      ],
+      "background": "rgba(255, 255, 255, 0.1) none repeat scroll 0% 0% / auto padding-box border-box",
+      "border": "0px none rgba(255, 255, 255, 0.18)",
+      "shadow": "none",
+      "blur": "none",
+      "color": "rgb(241, 251, 255)"
+    },
+    {
+      "cls": "choice ",
+      "text": "紧凑",
+      "rect": [
+        715.59375,
+        572.359375,
+        135.96875,
+        30
+      ],
+      "background": "rgba(255, 255, 255, 0.1) none repeat scroll 0% 0% / auto padding-box border-box",
+      "border": "0px none rgba(255, 255, 255, 0.18)",
+      "shadow": "none",
+      "blur": "none",
+      "color": "rgb(241, 251, 255)"
+    },
+    {
+      "cls": "choice active",
+      "text": "宽松",
+      "rect": [
+        854.5625,
+        572.359375,
+        135.953125,
+        30
+      ],
+      "background": "color(srgb 0.815686 0.929412 1 / 0.32) none repeat scroll 0% 0% / auto padding-box border-box",
+      "border": "0px none color(srgb 0.815686 0.929412 1 / 0.5)",
+      "shadow": "none",
+      "blur": "none",
+      "color": "rgb(244, 251, 255)"
+    },
+    {
+      "cls": "choice active",
+      "text": "浅色",
+      "rect": [
+        1016.515625,
+        572.359375,
+        173.640625,
+        30
+      ],
+      "background": "color(srgb 0.815686 0.929412 1 / 0.32) none repeat scroll 0% 0% / auto padding-box border-box",
+      "border": "0px none color(srgb 0.815686 0.929412 1 / 0.5)",
+      "shadow": "none",
+      "blur": "none",
+      "color": "rgb(244, 251, 255)"
+    },
+    {
+      "cls": "choice ",
+      "text": "深色",
+      "rect": [
+        1193.15625,
+        572.359375,
+        173.65625,
+        30
+      ],
+      "background": "rgba(255, 255, 255, 0.1) none repeat scroll 0% 0% / auto padding-box border-box",
+      "border": "0px none rgba(255, 255, 255, 0.18)",
+      "shadow": "none",
+      "blur": "none",
+      "color": "rgb(241, 251, 255)"
+    },
+    {
+      "cls": "choice ",
+      "text": "留在后台",
+      "rect": [
+        73.1875,
+        675.140625,
+        237.21875,
+        30
+      ],
+      "background": "rgba(255, 255, 255, 0.1) none repeat scroll 0% 0% / auto padding-box border-box",
+      "border": "0px none rgba(255, 255, 255, 0.18)",
+      "shadow": "none",
+      "blur": "none",
+      "color": "rgb(241, 251, 255)"
+    },
+    {
+      "cls": "choice active",
+      "text": "完全关闭",
+      "rect": [
+        313.40625,
+        675.140625,
+        237.234375,
+        30
+      ],
+      "background": "color(srgb 0.815686 0.929412 1 / 0.32) none repeat scroll 0% 0% / auto padding-box border-box",
+      "border": "0px none color(srgb 0.815686 0.929412 1 / 0.5)",
+      "shadow": "none",
+      "blur": "none",
+      "color": "rgb(244, 251, 255)"
+    },
+    {
+      "cls": "section settings-section wave-card in-view",
+      "text": "液态玻璃材质\n        只影响液态玻璃主题；拖动滑条即时生效。\n",
+      "rect": [
+        43.1875,
+        827.53125,
+        1353.625,
+        473.953125
+      ],
+      "background": "color(srgb 0.0392157 0.0627451 0.0941176 / 0.41) none repeat scroll 0% 0% / auto padding-box border-box",
+      "border": "1px solid rgba(255, 255, 255, 0.18)",
+      "shadow": "rgba(255, 255, 255, 0.14) 0px 1px 0px 0px inset, rgba(0, 8, 18, 0.18) 0px 14px 32px 0px",
+      "blur": "blur(12px) saturate(1.1)",
+      "color": "rgb(243, 249, 255)"
+    },
+    {
+      "cls": "choice ",
+      "text": "无",
+      "rect": [
+        124.1875,
+        1171.890625,
+        361,
+        30
+      ],
+      "background": "rgba(255, 255, 255, 0.1) none repeat scroll 0% 0% / auto padding-box border-box",
+      "border": "0px none rgba(255, 255, 255, 0.18)",
+      "shadow": "none",
+      "blur": "none",
+      "color": "rgb(241, 251, 255)"
+    },
+    {
+      "cls": "section settings-section wave-card in-view",
+      "text": "壁纸\n        支持本地上传、Windows 当前壁纸和 Wal",
+      "rect": [
+        43.1875,
+        1321.484375,
+        1353.625,
+        557.96875
+      ],
+      "background": "color(srgb 0.0392157 0.0627451 0.0941176 / 0.41) none repeat scroll 0% 0% / auto padding-box border-box",
+      "border": "1px solid rgba(255, 255, 255, 0.18)",
+      "shadow": "rgba(255, 255, 255, 0.14) 0px 1px 0px 0px inset, rgba(0, 8, 18, 0.18) 0px 14px 32px 0px",
+      "blur": "blur(12px) saturate(1.1)",
+      "color": "rgb(243, 249, 255)"
+    },
+    {
+      "cls": "section settings-section wave-card in-view",
+      "text": "快捷键\n        点击输入框后直接按下组合键。重复的快捷键会显示",
+      "rect": [
+        43.1875,
+        1899.453125,
+        1353.625,
+        340.796875
+      ],
+      "background": "color(srgb 0.0392157 0.0627451 0.0941176 / 0.41) none repeat scroll 0% 0% / auto padding-box border-box",
+      "border": "1px solid rgba(255, 255, 255, 0.18)",
+      "shadow": "rgba(255, 255, 255, 0.14) 0px 1px 0px 0px inset, rgba(0, 8, 18, 0.18) 0px 14px 32px 0px",
+      "blur": "blur(12px) saturate(1.1)",
+      "color": "rgb(243, 249, 255)"
+    },
+    {
+      "cls": "section settings-section wave-card in-view",
+      "text": "Agent 权限\n        硬边界：永远不能修改软件源码、安装目",
+      "rect": [
+        43.1875,
+        2260.25,
+        1353.625,
+        232.59375
+      ],
+      "background": "color(srgb 0.0392157 0.0627451 0.0941176 / 0.41) none repeat scroll 0% 0% / auto padding-box border-box",
+      "border": "1px solid rgba(255, 255, 255, 0.18)",
+      "shadow": "rgba(255, 255, 255, 0.14) 0px 1px 0px 0px inset, rgba(0, 8, 18, 0.18) 0px 14px 32px 0px",
+      "blur": "blur(12px) saturate(1.1)",
+      "color": "rgb(243, 249, 255)"
+    },
+    {
+      "cls": "section settings-section wave-card in-view",
+      "text": "DeepSeek API Key\n        Windows 本机",
+      "rect": [
+        43.1875,
+        2512.84375,
+        567.5,
+        232.1875
+      ],
+      "background": "color(srgb 0.0392157 0.0627451 0.0941176 / 0.41) none repeat scroll 0% 0% / auto padding-box border-box",
+      "border": "1px solid rgba(255, 255, 255, 0.18)",
+      "shadow": "rgba(255, 255, 255, 0.14) 0px 1px 0px 0px inset, rgba(0, 8, 18, 0.18) 0px 14px 32px 0px",
+      "blur": "blur(12px) saturate(1.1)",
+      "color": "rgb(243, 249, 255)"
+    },
+    {
+      "cls": "section settings-section wave-card in-view",
+      "text": "筛图加速专用 Key 池\n      主 Key 与下方 Key 共同",
+      "rect": [
+        630.6875,
+        2512.84375,
+        766.125,
+        394.78125
+      ],
+      "background": "color(srgb 0.0392157 0.0627451 0.0941176 / 0.41) none repeat scroll 0% 0% / auto padding-box border-box",
+      "border": "1px solid rgba(255, 255, 255, 0.18)",
+      "shadow": "rgba(255, 255, 255, 0.14) 0px 1px 0px 0px inset, rgba(0, 8, 18, 0.18) 0px 14px 32px 0px",
+      "blur": "blur(12px) saturate(1.1)",
+      "color": "rgb(243, 249, 255)"
+    },
+    {
+      "cls": "section settings-section wave-card in-view",
+      "text": "AI 接口与计价\n        模型 deepseek-flash ",
+      "rect": [
+        43.1875,
+        2765.03125,
+        567.5,
+        599.171875
+      ],
+      "background": "color(srgb 0.0392157 0.0627451 0.0941176 / 0.41) none repeat scroll 0% 0% / auto padding-box border-box",
+      "border": "1px solid rgba(255, 255, 255, 0.18)",
+      "shadow": "rgba(255, 255, 255, 0.14) 0px 1px 0px 0px inset, rgba(0, 8, 18, 0.18) 0px 14px 32px 0px",
+      "blur": "blur(12px) saturate(1.1)",
+      "color": "rgb(243, 249, 255)"
+    },
+    {
+      "cls": "section settings-section wave-card in-view",
+      "text": "本地模型与开源组件\n        连拍分组的“场景向量 + 人脸向量",
+      "rect": [
+        43.1875,
+        3384.203125,
+        567.5,
+        379.75
+      ],
+      "background": "color(srgb 0.0392157 0.0627451 0.0941176 / 0.41) none repeat scroll 0% 0% / auto padding-box border-box",
+      "border": "1px solid rgba(255, 255, 255, 0.18)",
+      "shadow": "rgba(255, 255, 255, 0.14) 0px 1px 0px 0px inset, rgba(0, 8, 18, 0.18) 0px 14px 32px 0px",
+      "blur": "blur(12px) saturate(1.1)",
+      "color": "rgb(243, 249, 255)"
+    },
+    {
+      "cls": "section settings-section wave-card in-view",
+      "text": "关于\n      \n        版本v1.0.0\n        ",
+      "rect": [
+        630.6875,
+        3384.203125,
+        766.125,
+        395.75
+      ],
+      "background": "color(srgb 0.0392157 0.0627451 0.0941176 / 0.41) none repeat scroll 0% 0% / auto padding-box border-box",
+      "border": "1px solid rgba(255, 255, 255, 0.18)",
+      "shadow": "rgba(255, 255, 255, 0.14) 0px 1px 0px 0px inset, rgba(0, 8, 18, 0.18) 0px 14px 32px 0px",
+      "blur": "blur(12px) saturate(1.1)",
+      "color": "rgb(243, 249, 255)"
+    }
+  ],
+  "inspectOpened": true,
+  "inspectClosed": true,
+  "errors": []
+}
